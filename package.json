@@ -3,7 +3,14 @@
   "version": "1.0.0",
   "description": "Serve ES modules from your node_modules folder.",
   "main": "index.js",
-  "repository": "git@github.com:fpipita/esm-middleware.git",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/fpipita/esm-middleware.git"
+  },
+  "homepage": "https://github.com/fpipita/esm-middleware/blob/master/README.md",
+  "bugs": {
+    "url": "https://github.com/fpipita/esm-middleware/issues"
+  },
   "author": "Francesco Pipita <francesco.pipita@gmail.com>",
   "license": "GPL-3.0",
   "private": false,
