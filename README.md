@@ -1,10 +1,10 @@
 # esm-middleware [![Build Status](https://travis-ci.com/fpipita/esm-middleware.svg?branch=master)](https://travis-ci.com/fpipita/esm-middleware)
 
-Serve ES modules from your node_modules folder.
+Serve ES modules from your `node_modules` folder.
 
-## Description
+## Overview
 
-`esm-middleware` enables an Express server to deliver ES modules from the `node_modules` directory.
+`esm-middleware` is an [Express middleware](http://expressjs.com/en/guide/writing-middleware.html) that aims to make it easy to deliver ES modules from the `node_modules` directory to the web browser, using the [ECMAScript 2015 import declaration syntax](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/import), which is currently available in all major browsers.
 
 ## Installation
 
