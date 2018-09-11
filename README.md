@@ -86,8 +86,7 @@ app.get("*", (res, req) => {
     <!doctype html>
     <html>
       <head>
-        <!-- Here, the module should explicitly loaded with the .js
-        extension -->
+        <!-- Here, the module should be explicitly loaded with the .js extension -->
         <script type="module" src="./my-module.js"></script>
       </head>
     </html>

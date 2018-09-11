@@ -40,6 +40,10 @@
       "prettier",
       "eslint",
       "git add"
+    ],
+    "*.md": [
+      "prettier",
+      "git add"
     ]
   }
 }
