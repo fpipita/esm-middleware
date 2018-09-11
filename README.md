@@ -1,4 +1,4 @@
-# esm-middleware
+# esm-middleware [![Build Status](https://travis-ci.com/fpipita/esm-middleware.svg?branch=master)](https://travis-ci.com/fpipita/esm-middleware)
 
 Serve ES modules from your node_modules folder.
 
