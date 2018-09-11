@@ -1,0 +1,45 @@
+{
+  "name": "esm-middleware",
+  "version": "1.0.0",
+  "description": "Serve ES modules from your node_modules folder.",
+  "main": "index.js",
+  "repository": "git@github.com:fpipita/esm-middleware.git",
+  "author": "Francesco Pipita <francesco.pipita@gmail.com>",
+  "license": "GPL-3.0",
+  "private": false,
+  "keywords": [
+    "esm",
+    "es6",
+    "modules",
+    "express",
+    "server",
+    "middleware",
+    "resolve",
+    "transform"
+  ],
+  "dependencies": {
+    "@babel/core": "^7.0.0",
+    "@babel/types": "^7.0.0",
+    "mime-types": "^2.1.20"
+  },
+  "devDependencies": {
+    "eslint": "^5.5.0",
+    "express": "^4.16.3",
+    "husky": "^0.14.3",
+    "jest": "^23.6.0",
+    "lint-staged": "^7.2.2",
+    "prettier": "^1.14.2",
+    "supertest": "^3.3.0"
+  },
+  "scripts": {
+    "test": "jest",
+    "precommit": "lint-staged"
+  },
+  "lint-staged": {
+    "*.js": [
+      "prettier",
+      "eslint",
+      "git add"
+    ]
+  }
+}
