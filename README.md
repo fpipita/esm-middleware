@@ -14,6 +14,10 @@ yarn add esm-middleware
 
 ## Basic usage
 
+On the server side, just create an `Express` app and attach the `esm-middleware`:
+
+__server/server.js__
+
 ```javascript
 const express = require("express");
 const esm = require("esm-middleware");
@@ -22,28 +26,60 @@ const path = require("path");
 
 const app = express();
 
-// In order for the middleware to work, the folder containing
-// the npm packages should be made publicly accessible.
-app.use("/node_modules", path.resolve("node_modules"));
+// The esm middleware should be attached to the Express app before
+// the static built-in middleware.
 app.use(esm());
+
+// Make the node_modules directory public.
+app.use("/node_modules", express.static("node_modules"));
+
+// Also, expose the directory where our client side code lives.
+app.use("/client", express.static("client"));
+
+app.get("*", (req, res) => {
+  res.send(`
+    <!doctype html>
+    <html>
+      <head>
+        <script type="module" src="/client/app.js"></script>
+      </head>
+      <body></body>
+    </html>
+  `);
+});
 
 const server = http.createServer(app);
 
 server.listen(3000, () => console.log("Listening on port 3000"));
 ```
 
+Let's now assume we wanted to use Lodash in our client side code, we first need to install it within our static `node_modules` folder:
+
+```bash
+npm install lodash
+```
+
+Then, in our client side code, we would just import Lodash as:
+
+__client/app.js__
+
+```javascript
+import _ from "lodash";
+
+// Use Lodash methods here...
+```
+
 ## Public API
 
 `esm-middleware` exports a factory function which takes a single options object argument:
 
-```javascript
-{ cache: Boolean, modulesRootDirectory: String }
-```
+|`{`|Type|Default value|Description|
+|:---|:---|:---|:---|
+|`cache`|`Boolean`|`true`|if `true`, modules are **cached**.
+|`modulesRootDirectory`|`String`|`path.resolve("node_modules")`|it is an absolute path to the folder containing `npm` packages.
+|`}`|||
 
-- `cache` (defaults to `true`) if `true`, modules are cached, this is suitable for production environments;
-- `modulesRootDirectory` (defaults to `path.resolve("node_modules")`) it is an absolute path to the folder containing npm packages;
-
-Furthermore, the middleware implements also a tiny web API which controls whether a certain module should be skipped from processing.
+Furthermore, the middleware implements a tiny web API which controls whether a certain module should be skipped from processing.
 
 Just add a `nomodule=true` query string argument to the declaration source, e.g.:
 
@@ -97,3 +133,13 @@ app.get("*", (res, req) => {
 If the extension is omitted, the middleware will not be able to process the module.
 
 Extension can be omitted for modules requested through `import` or `export` declarations indeed.
+
+### Node core modules
+
+Node code modules are not supported at the moment, so doing something like:
+
+```javascript
+import EventEmitter from "events";
+```
+
+won't just work.
