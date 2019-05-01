@@ -1,4 +1,4 @@
-const mime = require("mime");
+const mime = require("mime-types");
 const babel = require("@babel/core");
 const path = require("path");
 const _fs = require("fs");

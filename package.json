@@ -42,7 +42,6 @@
   "scripts": {
     "test": "eslint . && jest",
     "debug": "node --inspect-brk node_modules/.bin/jest --no-cache --runInBand",
-    "precommit": "lint-staged",
     "preversion": "yarn test",
     "version": "standard-changelog && git add -A",
     "postversion": "git push && git push --tags"
@@ -57,5 +56,10 @@
       "prettier",
       "git add"
     ]
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
   }
 }
