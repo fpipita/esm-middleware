@@ -26,6 +26,7 @@
   ],
   "dependencies": {
     "@babel/core": "^7.4.0",
+    "@babel/template": "^7.4.4",
     "@babel/types": "^7.4.0",
     "mime-types": "^2.1.22"
   },

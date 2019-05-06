@@ -24,7 +24,7 @@ function createMockFs() {
     }
   ) {
     const content = _files.get(path);
-    if (content) {
+    if (typeof content !== "undefined") {
       return found({ path, content });
     }
     const dir = [..._files.entries()].find(entry => {

@@ -1,0 +1,71 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`CommonJS modules handles exported literals 1`] = `
+"import './ui-bootstrap.tpls.js';
+export default \\"ui.bootstrap\\";"
+`;
+
+exports[`CommonJS modules handles mixed module.exports = require(...) and spare require(...) 1`] = `
+"import \\"../../modules/es6.object.keys.js\\";
+import _require from \\"../../modules/_core/index.js\\";
+export default _require.Object.keys;"
+`;
+
+exports[`CommonJS modules handles module.exports = require(...) 1`] = `
+"import _require from \\"./bar.js\\";
+export default _require;"
+`;
+
+exports[`CommonJS modules handles require() from directory 1`] = `
+"import _require from \\"/node_modules/core-js/library/fn/symbol/index.js\\";
+export default {
+  \\"default\\": _require,
+  __esModule: true
+};"
+`;
+
+exports[`CommonJS modules replaces top-level require() with import statement 1`] = `
+"import \\"./angular.js\\";
+export default angular;"
+`;
+
+exports[`caches modules by default 1`] = `"import foo from \\"/node_modules/foo/es/index.js\\";"`;
+
+exports[`doesn't crash on export specifiers with no source 1`] = `
+"import foo from \\"/node_modules/foo/es/index.js\\";
+export { foo };"
+`;
+
+exports[`ignores non JavaScript modules by default 1`] = `"import bar from \\"./bar.js\\";"`;
+
+exports[`missing extension can import from directory with index.js file inside 1`] = `"import foo from \\"./foo/index.js\\";"`;
+
+exports[`missing extension prioritizes JavaScript modules over directories 1`] = `"import foo from \\"./foo.js\\";"`;
+
+exports[`resolves modules without extension 1`] = `"import foo from \\"/node_modules/@foo/foo.js\\";"`;
+
+exports[`resolves user modules with missing extension 1`] = `"import foo from \\"./foo.js\\";"`;
+
+exports[`skips module processing when ?nomodule=true 1`] = `"import foo from \\"foo\\";"`;
+
+exports[`supports \`jsnext:main\` key in package.json 1`] = `"import foo from \\"/node_modules/foo/es/index.js\\";"`;
+
+exports[`supports \`module\` key in package.json 1`] = `"import foo from \\"/node_modules/foo/es/index.js\\";"`;
+
+exports[`supports commonjs modules 1`] = `"import foo from \\"/node_modules/foo/dist/index.js\\";"`;
+
+exports[`supports commonjs modules 2`] = `
+"const module = {
+  exports: {}
+};
+const exports = module.exports;
+export default module.exports;
+!function (e, t) {
+  t(exports);
+}(this, function (e) {
+  e.foo = 'bar';
+});
+const x = 1;"
+`;
+
+exports[`supports fine-grained import from package 1`] = `"import foo from \\"/node_modules/@foo/foo.js\\";"`;

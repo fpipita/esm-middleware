@@ -25,7 +25,13 @@ function esmMiddlewareFactory({
         return next();
       }
       const result = babel.transformSync(fs.readFileSync(moduleAbsPath), {
-        plugins: [esmResolverPlugin({ fs, modulesRootDirectory })]
+        plugins: [
+          esmResolverPlugin({
+            fs,
+            modulesRootDirectory,
+            currentModuleAbsolutePath: moduleAbsPath
+          })
+        ]
       });
       code = result.code;
       if (cache) {
