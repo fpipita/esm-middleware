@@ -1,25 +1,23 @@
+jest.mock("fs");
 const express = require("express");
 const request = require("supertest");
 const esm = require("../src/esm-middleware.js");
-const createMockFs = require("../scripts/mock-fs.js");
+const fs = require("fs");
+
+beforeEach(() => fs.__setFiles());
 
 test("sets correct content-type", async () => {
-  const response = await request(
-    express().use(
-      esm({
-        fs: createMockFs().addFiles(
-          {
-            path: "/client/app.js",
-            content: "import { createStore } from 'redux';"
-          },
-          {
-            path: "/node_modules/redux/package.json",
-            content: JSON.stringify({ module: "es/index.js" })
-          }
-        )
-      })
-    )
-  ).get("/client/app.js");
+  fs.__setFiles(
+    {
+      path: "/client/app.js",
+      content: "import { createStore } from 'redux';"
+    },
+    {
+      path: "/node_modules/redux/package.json",
+      content: JSON.stringify({ module: "es/index.js" })
+    }
+  );
+  const response = await request(express().use(esm())).get("/client/app.js");
   expect(response.status).toBe(200);
   expect(response.header["content-type"]).toBe(
     "application/javascript; charset=utf-8"
@@ -27,49 +25,23 @@ test("sets correct content-type", async () => {
 });
 
 test("supports `module` key in package.json", async () => {
-  const response = await request(
-    express().use(
-      esm({
-        fs: createMockFs().addFiles(
-          {
-            path: "/client/app.js",
-            content: 'import foo from "foo";'
-          },
-          {
-            path: "/node_modules/foo/package.json",
-            content: JSON.stringify({ module: "es/index.js" })
-          }
-        )
-      })
-    )
-  ).get("/client/app.js");
+  fs.__setFiles(
+    {
+      path: "/client/app.js",
+      content: 'import foo from "foo";'
+    },
+    {
+      path: "/node_modules/foo/package.json",
+      content: JSON.stringify({ module: "es/index.js" })
+    }
+  );
+  const response = await request(express().use(esm())).get("/client/app.js");
   expect(response.status).toEqual(200);
   expect(response.text).toMatchSnapshot();
 });
 
 test("supports `jsnext:main` key in package.json", async () => {
-  const response = await request(
-    express().use(
-      esm({
-        fs: createMockFs().addFiles(
-          {
-            path: "/client/app.js",
-            content: 'import foo from "foo";'
-          },
-          {
-            path: "/node_modules/foo/package.json",
-            content: JSON.stringify({ "jsnext:main": "es/index.js" })
-          }
-        )
-      })
-    )
-  ).get("/client/app.js");
-  expect(response.status).toEqual(200);
-  expect(response.text).toMatchSnapshot();
-});
-
-test("caches modules by default", async () => {
-  const fs = createMockFs().addFiles(
+  fs.__setFiles(
     {
       path: "/client/app.js",
       content: 'import foo from "foo";'
@@ -79,10 +51,26 @@ test("caches modules by default", async () => {
       content: JSON.stringify({ "jsnext:main": "es/index.js" })
     }
   );
-  const app = express().use(esm({ fs }));
+  const response = await request(express().use(esm())).get("/client/app.js");
+  expect(response.status).toEqual(200);
+  expect(response.text).toMatchSnapshot();
+});
+
+test("caches modules by default", async () => {
+  fs.__setFiles(
+    {
+      path: "/client/app.js",
+      content: 'import foo from "foo";'
+    },
+    {
+      path: "/node_modules/foo/package.json",
+      content: JSON.stringify({ "jsnext:main": "es/index.js" })
+    }
+  );
+  const app = express().use(esm());
   await request(app).get("/client/app.js");
 
-  fs.addFiles(
+  fs.__setFiles(
     {
       path: "/client/app.js",
       content: 'import bar from "bar";'
@@ -99,13 +87,13 @@ test("caches modules by default", async () => {
 });
 
 test("delegates next middleware on unresolved module", async () => {
-  const app = express().use(esm({ fs: createMockFs() }));
+  const app = express().use(esm());
   const response = await request(app).get("/client/app.js");
   expect(response.status).toEqual(404);
 });
 
 test("supports commonjs modules", async () => {
-  const fs = createMockFs().addFiles(
+  fs.__setFiles(
     {
       path: "client/app.js",
       content: 'import foo from "foo";'
@@ -120,7 +108,7 @@ test("supports commonjs modules", async () => {
         "!function(e, t){t(exports)}(this, function(e){e.foo = 'bar'});const x = 1;"
     }
   );
-  const app = express().use(esm({ fs }));
+  const app = express().use(esm());
   const response1 = await request(app).get("/client/app.js");
   expect(response1.status).toEqual(200);
   expect(response1.text).toMatchSnapshot();
@@ -131,7 +119,7 @@ test("supports commonjs modules", async () => {
 });
 
 test("supports fine-grained import from package", async () => {
-  const fs = createMockFs().addFiles(
+  fs.__setFiles(
     {
       path: "/client/app.js",
       content: 'import foo from "@foo/foo.js";'
@@ -141,15 +129,14 @@ test("supports fine-grained import from package", async () => {
       content: "console.log('cool')"
     }
   );
-  const app = express().use(esm({ fs }));
+  const app = express().use(esm());
   const response = await request(app).get("/client/app.js");
   expect(response.status).toEqual(200);
   expect(response.text).toMatchSnapshot();
 });
 
 test("skips module processing when ?nomodule=true", async () => {
-  const fs = {};
-  const app = express().use(esm({ fs }));
+  const app = express().use(esm());
   app.get("/client/app.js", (req, res) => {
     res.setHeader("Content-Type", "application/javascript");
     res.send(200, 'import foo from "foo";');
@@ -160,28 +147,23 @@ test("skips module processing when ?nomodule=true", async () => {
 });
 
 test("doesn't crash on export specifiers with no source", async () => {
-  const response = await request(
-    express().use(
-      esm({
-        fs: createMockFs().addFiles(
-          {
-            path: "/client/app.js",
-            content: 'import foo from "foo"; export { foo };'
-          },
-          {
-            path: "/node_modules/foo/package.json",
-            content: JSON.stringify({ module: "es/index.js" })
-          }
-        )
-      })
-    )
-  ).get("/client/app.js");
+  fs.__setFiles(
+    {
+      path: "/client/app.js",
+      content: 'import foo from "foo"; export { foo };'
+    },
+    {
+      path: "/node_modules/foo/package.json",
+      content: JSON.stringify({ module: "es/index.js" })
+    }
+  );
+  const response = await request(express().use(esm())).get("/client/app.js");
   expect(response.status).toEqual(200);
   expect(response.text).toMatchSnapshot();
 });
 
 test("resolves modules without extension", async () => {
-  const fs = createMockFs().addFiles(
+  fs.__setFiles(
     {
       path: "/client/app.js",
       content: 'import foo from "@foo/foo";'
@@ -191,14 +173,14 @@ test("resolves modules without extension", async () => {
       content: "console.log('javascript is cool!')"
     }
   );
-  const app = express().use(esm({ fs }));
+  const app = express().use(esm());
   const response = await request(app).get("/client/app.js");
   expect(response.status).toEqual(200);
   expect(response.text).toMatchSnapshot();
 });
 
 test("resolves user modules with missing extension", async () => {
-  const fs = createMockFs().addFiles(
+  fs.__setFiles(
     {
       path: "/client/app.js",
       content: 'import foo from "./foo";'
@@ -208,14 +190,14 @@ test("resolves user modules with missing extension", async () => {
       content: "console.log('javascript is cool!')"
     }
   );
-  const app = express().use(esm({ fs }));
+  const app = express().use(esm());
   const response = await request(app).get("/client/app.js");
   expect(response.status).toEqual(200);
   expect(response.text).toMatchSnapshot();
 });
 
 test("ignores non JavaScript modules by default", async () => {
-  const fs = createMockFs().addFiles(
+  fs.__setFiles(
     {
       path: "/client/app.js",
       content: `
@@ -228,14 +210,14 @@ test("ignores non JavaScript modules by default", async () => {
       content: ""
     }
   );
-  const app = express().use(esm({ fs }));
+  const app = express().use(esm());
   const response = await request(app).get("/client/app.js");
   expect(response.text).toMatchSnapshot();
 });
 
 describe("missing extension", () => {
   test("can import from directory with index.js file inside", async () => {
-    const fs = createMockFs().addFiles(
+    fs.__setFiles(
       {
         path: "/client/app.js",
         content: 'import foo from "./foo";'
@@ -245,13 +227,13 @@ describe("missing extension", () => {
         content: "export default 'foo';"
       }
     );
-    const app = express().use(esm({ fs }));
+    const app = express().use(esm());
     const response = await request(app).get("/client/app.js");
     expect(response.text).toMatchSnapshot();
   });
 
   test("prioritizes JavaScript modules over directories", async () => {
-    const fs = createMockFs().addFiles(
+    fs.__setFiles(
       {
         path: "/client/app.js",
         content: 'import foo from "./foo";'
@@ -265,7 +247,7 @@ describe("missing extension", () => {
         content: "export default 'bar';"
       }
     );
-    const app = express().use(esm({ fs }));
+    const app = express().use(esm());
     const response = await request(app).get("/client/app.js");
     expect(response.text).toMatchSnapshot();
   });
@@ -273,7 +255,7 @@ describe("missing extension", () => {
 
 describe("CommonJS modules", () => {
   test("replaces top-level require() with import statement", async () => {
-    const fs = createMockFs().addFiles(
+    fs.__setFiles(
       {
         path: "/node_modules/angular/index.js",
         content: `
@@ -286,20 +268,20 @@ describe("CommonJS modules", () => {
         content: ""
       }
     );
-    const app = express().use(esm({ fs }));
+    const app = express().use(esm());
     const response = await request(app).get("/node_modules/angular/index.js");
     expect(response.text).toMatchSnapshot();
   });
 
   test("handles exported literals", async () => {
-    const fs = createMockFs().addFiles({
+    fs.__setFiles({
       path: "/node_modules/ui-bootstrap/index.js",
       content: `
         require('./ui-bootstrap.tpls.js');
         module.exports = "ui.bootstrap";
       `
     });
-    const app = express().use(esm({ fs }));
+    const app = express().use(esm());
     const response = await request(app).get(
       "/node_modules/ui-bootstrap/index.js"
     );
@@ -307,7 +289,7 @@ describe("CommonJS modules", () => {
   });
 
   test("handles module.exports = require(...)", async () => {
-    const fs = createMockFs().addFiles(
+    fs.__setFiles(
       {
         path: "/node_modules/foo/index.js",
         content: `
@@ -319,13 +301,13 @@ describe("CommonJS modules", () => {
         content: ""
       }
     );
-    const app = express().use(esm({ fs }));
+    const app = express().use(esm());
     const response = await request(app).get("/node_modules/foo/index.js");
     expect(response.text).toMatchSnapshot();
   });
 
   test("handles mixed module.exports = require(...) and spare require(...)", async () => {
-    const fs = createMockFs().addFiles(
+    fs.__setFiles(
       {
         path: "/node_modules/babel-runtime/core-js/object/keys.js",
         content: `
@@ -342,7 +324,7 @@ describe("CommonJS modules", () => {
         content: ""
       }
     );
-    const app = express().use(esm({ fs }));
+    const app = express().use(esm());
     const response = await request(app).get(
       "/node_modules/babel-runtime/core-js/object/keys.js"
     );
@@ -350,7 +332,7 @@ describe("CommonJS modules", () => {
   });
 
   test("handles require() from directory", async () => {
-    const fs = createMockFs().addFiles(
+    fs.__setFiles(
       {
         path: "/node_modules/babel-runtime/core-js/symbol.js",
         content: `
@@ -362,7 +344,7 @@ describe("CommonJS modules", () => {
         content: ""
       }
     );
-    const app = express().use(esm({ fs }));
+    const app = express().use(esm());
     const response = await request(app).get(
       "/node_modules/babel-runtime/core-js/symbol.js"
     );

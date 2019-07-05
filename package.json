@@ -25,25 +25,25 @@
     "transform"
   ],
   "dependencies": {
-    "@babel/core": "^7.4.5",
+    "@babel/core": "^7.5.0",
     "@babel/template": "^7.4.4",
-    "@babel/types": "^7.4.0",
+    "@babel/types": "^7.5.0",
     "mime-types": "^2.1.22"
   },
   "devDependencies": {
-    "eslint": "^5.15.3",
+    "eslint": "^6.0.1",
     "express": "^4.17.1",
-    "husky": "^2.4.1",
+    "husky": "^3.0.0",
     "jest": "^24.8.0",
-    "lint-staged": "^8.2.1",
+    "lint-staged": "^9.0.2",
     "prettier": "^1.18.2",
     "standard-changelog": "^2.0.11",
     "supertest": "^4.0.2"
   },
   "scripts": {
-    "test": "eslint . && jest",
+    "test": "jest",
     "debug": "node --inspect-brk node_modules/.bin/jest --no-cache --runInBand",
-    "preversion": "yarn test",
+    "preversion": "yarn test && eslint .",
     "version": "standard-changelog && git add -A",
     "postversion": "git push && git push --tags"
   },

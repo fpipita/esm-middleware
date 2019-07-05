@@ -1,5 +1,5 @@
 const path = require("path");
-const _fs = require("fs");
+const fs = require("fs");
 const t = require("@babel/types");
 const template = require("@babel/template").default;
 
@@ -32,7 +32,6 @@ function findLastImportStatementPath(programPath) {
 
 function esmResolverPluginFactory({
   currentModuleAbsolutePath,
-  fs = _fs,
   modulesRootDirectory = path.resolve("node_modules")
 } = {}) {
   return function() {

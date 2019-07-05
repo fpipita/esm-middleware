@@ -1,11 +1,10 @@
 const mime = require("mime-types");
 const babel = require("@babel/core");
 const path = require("path");
-const _fs = require("fs");
+const fs = require("fs");
 const esmResolverPlugin = require("./babel-plugin-esm-resolver.js");
 
 function esmMiddlewareFactory({
-  fs = _fs,
   cache = true,
   modulesRootDirectory = path.resolve("node_modules")
 } = {}) {
