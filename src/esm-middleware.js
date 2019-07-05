@@ -25,8 +25,8 @@ function esmMiddlewareFactory({
       }
       const result = babel.transformSync(fs.readFileSync(moduleAbsPath), {
         plugins: [
+          "babel-plugin-syntax-dynamic-import",
           esmResolverPlugin({
-            fs,
             modulesRootDirectory,
             currentModuleAbsolutePath: moduleAbsPath
           })
