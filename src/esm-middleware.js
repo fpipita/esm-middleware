@@ -6,7 +6,7 @@ const esmResolverPlugin = require("./babel-plugin-esm-resolver.js");
 
 function esmMiddlewareFactory({
   cache = true,
-  modulesRootDirectory = path.resolve("node_modules")
+  nodeModulesRoot = path.resolve("node_modules")
 } = {}) {
   const esmCache = new Map();
 
@@ -25,9 +25,9 @@ function esmMiddlewareFactory({
       }
       const result = babel.transformSync(fs.readFileSync(moduleAbsPath), {
         plugins: [
-          "babel-plugin-syntax-dynamic-import",
+          require("babel-plugin-syntax-dynamic-import"),
           esmResolverPlugin({
-            modulesRootDirectory,
+            nodeModulesRoot,
             currentModuleAbsolutePath: moduleAbsPath
           })
         ]

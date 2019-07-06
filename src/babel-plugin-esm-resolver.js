@@ -6,8 +6,9 @@ const template = require("@babel/template").default;
 // Babel plugin handbook https://github.com/jamiebuilds/babel-handbook/blob/master/translations/en/plugin-handbook.md
 // ESTree AST reference https://github.com/babel/babylon/blob/master/ast/spec.md
 
-const JAVASCRIPT_MODULE_EXTENSION_PATTERN = /^(\.(js|mjs))$/;
-const VALID_IMPORT_DECLARATION_SOURCE = /^[./]/;
+const JS_FILE_PATTERN = /\.(js|mjs)$/;
+const MODULE_SPECIFIER_PATTERN = /^[./]/;
+const PATH_SEPARATOR_REPLACER = new RegExp(path.sep, "g");
 
 const buildExportDefault = template(`
   export default %%exportDefaultDeclaration%%;
@@ -30,19 +31,94 @@ function findLastImportStatementPath(programPath) {
   return null;
 }
 
+function joinRelativePath(...paths) {
+  const result = path.join(...paths);
+  if (path.isAbsolute(result) || MODULE_SPECIFIER_PATTERN.test(result)) {
+    return result;
+  }
+  return `.${path.sep}${result}`;
+}
+
+function resolveUserModule(source, currentModuleAbsolutePath) {
+  const cwd = path.dirname(currentModuleAbsolutePath);
+  const p = path.resolve(cwd, source);
+  if (!fs.existsSync(p)) {
+    if (!JS_FILE_PATTERN.test(p)) {
+      return resolveUserModule(source + ".js", currentModuleAbsolutePath);
+    }
+    return null;
+  }
+  const stat = fs.statSync(p);
+  if (stat.isFile()) {
+    return source;
+  }
+  // if we get here, source is a directory, before to look for
+  // package.json, let's check whether a module with the same
+  // basename exists
+  return (
+    resolveUserModule(source + ".js", currentModuleAbsolutePath) ||
+    resolveUserModule(
+      joinRelativePath(source, "index.js"),
+      currentModuleAbsolutePath
+    )
+  );
+}
+
+function resolveNodeModuleFromPackageJson(dir) {
+  const p = path.resolve(dir, "package.json");
+  if (!fs.existsSync(p)) {
+    return null;
+  }
+  const pj = JSON.parse(fs.readFileSync(p));
+  const m = pj.module || pj["jsnext:main"] || pj.main;
+  if (!m) {
+    return null;
+  }
+  return path.resolve(dir, m);
+}
+
+function resolveNodeModule(source, nodeModulesRoot) {
+  const p = path.resolve(nodeModulesRoot, source);
+  if (!fs.existsSync(p)) {
+    if (!JS_FILE_PATTERN.test(p)) {
+      return resolveNodeModule(source + ".js", nodeModulesRoot);
+    }
+    return null;
+  }
+  const stat = fs.statSync(p);
+  if (stat.isDirectory()) {
+    return (
+      resolveNodeModuleFromPackageJson(p) ||
+      resolveNodeModule(path.join(source, "index.js"), nodeModulesRoot)
+    );
+  }
+  return p;
+}
+
+function resolveModule(source, nodeModulesRoot, currentModuleAbsolutePath) {
+  if (MODULE_SPECIFIER_PATTERN.test(source)) {
+    return resolveUserModule(source, currentModuleAbsolutePath);
+  }
+  const result = resolveNodeModule(source, nodeModulesRoot);
+  if (result !== null) {
+    return result.replace(process.cwd(), "");
+  }
+  return result;
+}
+
 function esmResolverPluginFactory({
   currentModuleAbsolutePath,
-  modulesRootDirectory = path.resolve("node_modules")
+  nodeModulesRoot = path.resolve("node_modules")
 } = {}) {
   return function() {
     return {
       visitor: {
         Program: {
-          exit(path) {
-            if (path.node.body.some(t.isModuleDeclaration)) {
+          exit(p) {
+            if (p.node.body.some(t.isModuleDeclaration)) {
               return;
             }
-            path.unshiftContainer(
+            p.unshiftContainer(
               "body",
               template.ast`
                 const module = { exports: {} };
@@ -53,9 +129,9 @@ function esmResolverPluginFactory({
           }
         },
         AssignmentExpression: {
-          exit(path) {
-            const left = path.get("left");
-            if (path.scope.parent !== null) {
+          exit(p) {
+            const left = p.get("left");
+            if (p.scope.parent !== null) {
               return;
             }
             if (!left.isMemberExpression()) {
@@ -67,34 +143,34 @@ function esmResolverPluginFactory({
             ) {
               return;
             }
-            path.replaceWithMultiple(
+            p.replaceWithMultiple(
               buildExportDefault({
-                exportDefaultDeclaration: path.get("right").node
+                exportDefaultDeclaration: p.get("right").node
               })
             );
           }
         },
-        CallExpression(path) {
-          if (path.scope.parent !== null) {
+        CallExpression(p) {
+          if (p.scope.parent !== null) {
             return;
           }
-          if (!path.get("callee").isIdentifier({ name: "require" })) {
+          if (!p.get("callee").isIdentifier({ name: "require" })) {
             return;
           }
-          const program = path.findParent(path => path.isProgram());
+          const program = p.findParent(path => path.isProgram());
           let importDeclaration;
-          if (path.getStatementParent().get("expression") === path) {
+          if (p.getStatementParent().get("expression") === p) {
             importDeclaration = buildImportWithNoBinding({
-              importSpecifier: path.get("arguments.0").node
+              importSpecifier: p.get("arguments.0").node
             });
-            path.remove();
+            p.remove();
           } else {
-            const binding = path.scope.generateUidIdentifier("require");
+            const binding = p.scope.generateUidIdentifier("require");
             importDeclaration = buildImportBindingFromDefault({
               binding,
-              source: path.get("arguments.0").node
+              source: p.get("arguments.0").node
             });
-            path.replaceWith(binding);
+            p.replaceWith(binding);
           }
           const lastImportStatement = findLastImportStatementPath(program);
           if (lastImportStatement) {
@@ -103,79 +179,19 @@ function esmResolverPluginFactory({
             program.unshiftContainer("body", importDeclaration);
           }
         },
-        ModuleDeclaration(astPath) {
-          const source = astPath.node.source;
-          if (!source) {
+        ModuleDeclaration(p) {
+          if (!p.node.source) {
             return;
           }
-          const ext = path.extname(source.value);
-          if (
-            VALID_IMPORT_DECLARATION_SOURCE.test(source.value) &&
-            !JAVASCRIPT_MODULE_EXTENSION_PATTERN.test(ext)
-          ) {
-            const currentDirectory = path.dirname(currentModuleAbsolutePath);
-            const maybeJsFileWithNoExtension = path.join(
-              currentDirectory,
-              `${source.value}.js`
-            );
-            if (
-              fs.existsSync(maybeJsFileWithNoExtension) &&
-              fs.statSync(maybeJsFileWithNoExtension).isFile()
-            ) {
-              source.value = `${source.value}.js`;
-              return;
-            }
-            const maybeDirectoryWithIndexFileInside = path.join(
-              currentDirectory,
-              source.value,
-              "index.js"
-            );
-            if (
-              fs.existsSync(maybeDirectoryWithIndexFileInside) &&
-              fs.statSync(maybeDirectoryWithIndexFileInside).isFile()
-            ) {
-              source.value = `${source.value}/index.js`;
-              return;
-            }
-            astPath.remove();
-            return;
-          }
-          let modulePath = path.resolve(modulesRootDirectory, source.value);
-          if (!fs.existsSync(modulePath)) {
-            modulePath = modulePath + ".js";
-            if (!fs.existsSync(modulePath)) {
-              return;
-            }
-          }
-          if (fs.statSync(modulePath).isFile()) {
-            source.value = modulePath.replace(process.cwd(), "");
-            return;
-          }
-          const maybeDirectoryWithIndexFileInside = path.join(
-            modulePath,
-            "index.js"
+          const source = resolveModule(
+            p.node.source.value,
+            nodeModulesRoot,
+            currentModuleAbsolutePath
           );
-          if (
-            fs.existsSync(maybeDirectoryWithIndexFileInside) &&
-            fs.statSync(maybeDirectoryWithIndexFileInside).isFile()
-          ) {
-            source.value = maybeDirectoryWithIndexFileInside.replace(
-              process.cwd(),
-              ""
-            );
-            return;
-          }
-          const pkg = JSON.parse(
-            fs.readFileSync(path.resolve(modulePath, "package.json"))
-          );
-          const esRelative = pkg.module || pkg["jsnext:main"] || pkg.main;
-          if (typeof esRelative !== "string") {
-            return;
-          }
-          const esPath = path.resolve(modulePath, esRelative);
-          source.value = esPath.replace(process.cwd(), "");
-          if (!/\.(js|mjs)$/.test(source.value)) {
-            source.value = `${source.value}.js`;
+          if (source === null || !JS_FILE_PATTERN.test(source)) {
+            p.remove();
+          } else {
+            p.node.source.value = source.replace(PATH_SEPARATOR_REPLACER, "/");
           }
         }
       }

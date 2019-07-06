@@ -36,6 +36,8 @@ exports[`doesn't crash on export specifiers with no source 1`] = `
 export { foo };"
 `;
 
+exports[`ignores node package exporting non-js code 1`] = `"export default \\"bar\\";"`;
+
 exports[`ignores non JavaScript modules by default 1`] = `"import bar from \\"./bar.js\\";"`;
 
 exports[`missing extension can import from directory with index.js file inside 1`] = `"import foo from \\"./foo/index.js\\";"`;

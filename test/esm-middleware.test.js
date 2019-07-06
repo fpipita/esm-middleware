@@ -33,6 +33,10 @@ test("supports `module` key in package.json", async () => {
     {
       path: "/node_modules/foo/package.json",
       content: JSON.stringify({ module: "es/index.js" })
+    },
+    {
+      path: "/node_modules/foo/es/index.js",
+      content: "export default 'foo';"
     }
   );
   const response = await request(express().use(esm())).get("/client/app.js");
@@ -215,6 +219,31 @@ test("ignores non JavaScript modules by default", async () => {
   expect(response.text).toMatchSnapshot();
 });
 
+test("ignores node package exporting non-js code", async () => {
+  fs.__setFiles(
+    {
+      path: "/client/app.js",
+      content: `
+        import 'animate.css';
+        export default "bar";
+      `
+    },
+    {
+      path: "/node_modules/animate.css/package.json",
+      content: JSON.stringify({
+        main: "./animate.css"
+      })
+    },
+    {
+      path: "/node_modules/animate.css/animate.css",
+      content: "#foo {}"
+    }
+  );
+  const app = express().use(esm());
+  const response = await request(app).get("/client/app.js");
+  expect(response.text).toMatchSnapshot();
+});
+
 describe("missing extension", () => {
   test("can import from directory with index.js file inside", async () => {
     fs.__setFiles(
@@ -274,13 +303,19 @@ describe("CommonJS modules", () => {
   });
 
   test("handles exported literals", async () => {
-    fs.__setFiles({
-      path: "/node_modules/ui-bootstrap/index.js",
-      content: `
-        require('./ui-bootstrap.tpls.js');
-        module.exports = "ui.bootstrap";
-      `
-    });
+    fs.__setFiles(
+      {
+        path: "/node_modules/ui-bootstrap/index.js",
+        content: `
+          require('./ui-bootstrap.tpls.js');
+          module.exports = "ui.bootstrap";
+        `
+      },
+      {
+        path: "/node_modules/ui-bootstrap/ui-bootstrap.tpls.js",
+        content: "module.exports = 'foo';"
+      }
+    );
     const app = express().use(esm());
     const response = await request(app).get(
       "/node_modules/ui-bootstrap/index.js"
