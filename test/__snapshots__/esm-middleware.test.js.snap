@@ -1,22 +1,45 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`CommonJS modules handles exported literals 1`] = `
+exports[`always adds export default exports when exports is referenced 1`] = `
+"const module = {
+  exports: {}
+};
+const exports = module.exports;
+!function (t) {
+  t(exports);
+}(function (e) {
+  e.bar = 'foo';
+});
+export const bar = exports.bar;
+export default exports;"
+`;
+
+exports[`caches modules by default 1`] = `"import foo from \\"/node_modules/foo/es/index.js\\";"`;
+
+exports[`can import from directory with index.js file inside 1`] = `"import foo from \\"./foo/index.js\\";"`;
+
+exports[`doesn't crash on export specifiers with no source 1`] = `
+"import foo from \\"/node_modules/foo/es/index.js\\";
+export { foo };"
+`;
+
+exports[`handles exported literals 1`] = `
 "import './ui-bootstrap.tpls.js';
 export default \\"ui.bootstrap\\";"
 `;
 
-exports[`CommonJS modules handles mixed module.exports = require(...) and spare require(...) 1`] = `
+exports[`handles mixed module.exports = require(...) and spare require(...) 1`] = `
 "import \\"../../modules/es6.object.keys.js\\";
 import _require from \\"../../modules/_core/index.js\\";
 export default _require.Object.keys;"
 `;
 
-exports[`CommonJS modules handles module.exports = require(...) 1`] = `
+exports[`handles module.exports = require(...) 1`] = `
 "import _require from \\"./bar.js\\";
 export default _require;"
 `;
 
-exports[`CommonJS modules handles require() from directory 1`] = `
+exports[`handles require() from directory 1`] = `
 "import _require from \\"/node_modules/core-js/library/fn/symbol/index.js\\";
 export default {
   \\"default\\": _require,
@@ -24,25 +47,16 @@ export default {
 };"
 `;
 
-exports[`CommonJS modules replaces top-level require() with import statement 1`] = `
-"import \\"./angular.js\\";
-export default angular;"
-`;
-
-exports[`caches modules by default 1`] = `"import foo from \\"/node_modules/foo/es/index.js\\";"`;
-
-exports[`doesn't crash on export specifiers with no source 1`] = `
-"import foo from \\"/node_modules/foo/es/index.js\\";
-export { foo };"
-`;
-
 exports[`ignores node package exporting non-js code 1`] = `"export default \\"bar\\";"`;
 
 exports[`ignores non JavaScript modules by default 1`] = `"import bar from \\"./bar.js\\";"`;
 
-exports[`missing extension can import from directory with index.js file inside 1`] = `"import foo from \\"./foo/index.js\\";"`;
+exports[`prioritizes JavaScript modules over directories 1`] = `"import foo from \\"./foo.js\\";"`;
 
-exports[`missing extension prioritizes JavaScript modules over directories 1`] = `"import foo from \\"./foo.js\\";"`;
+exports[`replaces top-level require() with import statement 1`] = `
+"import \\"./angular.js\\";
+export default angular;"
+`;
 
 exports[`resolves modules without extension 1`] = `"import foo from \\"/node_modules/@foo/foo.js\\";"`;
 
@@ -61,13 +75,48 @@ exports[`supports commonjs modules 2`] = `
   exports: {}
 };
 const exports = module.exports;
-export default module.exports;
 !function (e, t) {
   t(exports);
 }(this, function (e) {
   e.foo = 'bar';
 });
-const x = 1;"
+const x = 1;
+export const foo = exports.foo;
+export default exports;"
 `;
 
 exports[`supports fine-grained import from package 1`] = `"import foo from \\"/node_modules/@foo/foo.js\\";"`;
+
+exports[`supports named exports 1`] = `
+"const module = {
+  exports: {}
+};
+const exports = module.exports;
+!function (t) {
+  t(exports);
+}(function (e) {
+  e.bar = 'foo';
+});
+export const bar = exports.bar;
+export default exports;"
+`;
+
+exports[`supports named exports wrapped within a sequence expression 1`] = `
+"const module = {
+  exports: {}
+};
+const exports = module.exports;
+!function (e, t) {
+  \\"object\\" == typeof exports && \\"undefined\\" != typeof module ? t(exports) : \\"function\\" == typeof define && define.amd ? define([\\"exports\\"], t) : t(e.reduxLogger = e.reduxLogger || {});
+}(this, function (e) {
+  \\"use strict\\";
+
+  e.defaults = L, e.createLogger = S, e.logger = T, e.default = T, Object.defineProperty(e, \\"__esModule\\", {
+    value: !0
+  });
+});
+export const defaults = exports.defaults;
+export const createLogger = exports.createLogger;
+export const logger = exports.logger;
+export default exports.default;"
+`;

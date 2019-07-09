@@ -109,7 +109,7 @@ test("supports commonjs modules", async () => {
     {
       path: "/node_modules/foo/dist/index.js",
       content:
-        "!function(e, t){t(exports)}(this, function(e){e.foo = 'bar'});const x = 1;"
+        "!function(e,t){t(exports)}(this,function(e){e.foo='bar'});const x=1;"
     }
   );
   const app = express().use(esm());
@@ -244,145 +244,196 @@ test("ignores node package exporting non-js code", async () => {
   expect(response.text).toMatchSnapshot();
 });
 
-describe("missing extension", () => {
-  test("can import from directory with index.js file inside", async () => {
-    fs.__setFiles(
-      {
-        path: "/client/app.js",
-        content: 'import foo from "./foo";'
-      },
-      {
-        path: "/client/foo/index.js",
-        content: "export default 'foo';"
-      }
-    );
-    const app = express().use(esm());
-    const response = await request(app).get("/client/app.js");
-    expect(response.text).toMatchSnapshot();
-  });
-
-  test("prioritizes JavaScript modules over directories", async () => {
-    fs.__setFiles(
-      {
-        path: "/client/app.js",
-        content: 'import foo from "./foo";'
-      },
-      {
-        path: "/client/foo/index.js",
-        content: "export default 'foo';"
-      },
-      {
-        path: "/client/foo.js",
-        content: "export default 'bar';"
-      }
-    );
-    const app = express().use(esm());
-    const response = await request(app).get("/client/app.js");
-    expect(response.text).toMatchSnapshot();
-  });
+test("can import from directory with index.js file inside", async () => {
+  fs.__setFiles(
+    {
+      path: "/client/app.js",
+      content: 'import foo from "./foo";'
+    },
+    {
+      path: "/client/foo/index.js",
+      content: "export default 'foo';"
+    }
+  );
+  const app = express().use(esm());
+  const response = await request(app).get("/client/app.js");
+  expect(response.text).toMatchSnapshot();
 });
 
-describe("CommonJS modules", () => {
-  test("replaces top-level require() with import statement", async () => {
-    fs.__setFiles(
-      {
-        path: "/node_modules/angular/index.js",
-        content: `
+test("prioritizes JavaScript modules over directories", async () => {
+  fs.__setFiles(
+    {
+      path: "/client/app.js",
+      content: 'import foo from "./foo";'
+    },
+    {
+      path: "/client/foo/index.js",
+      content: "export default 'foo';"
+    },
+    {
+      path: "/client/foo.js",
+      content: "export default 'bar';"
+    }
+  );
+  const app = express().use(esm());
+  const response = await request(app).get("/client/app.js");
+  expect(response.text).toMatchSnapshot();
+});
+
+test("replaces top-level require() with import statement", async () => {
+  fs.__setFiles(
+    {
+      path: "/node_modules/angular/index.js",
+      content: `
           require('./angular');
           module.exports = angular;
         `
-      },
-      {
-        path: "/node_modules/angular/angular.js",
-        content: ""
-      }
-    );
-    const app = express().use(esm());
-    const response = await request(app).get("/node_modules/angular/index.js");
-    expect(response.text).toMatchSnapshot();
-  });
+    },
+    {
+      path: "/node_modules/angular/angular.js",
+      content: ""
+    }
+  );
+  const app = express().use(esm());
+  const response = await request(app).get("/node_modules/angular/index.js");
+  expect(response.text).toMatchSnapshot();
+});
 
-  test("handles exported literals", async () => {
-    fs.__setFiles(
-      {
-        path: "/node_modules/ui-bootstrap/index.js",
-        content: `
+test("handles exported literals", async () => {
+  fs.__setFiles(
+    {
+      path: "/node_modules/ui-bootstrap/index.js",
+      content: `
           require('./ui-bootstrap.tpls.js');
           module.exports = "ui.bootstrap";
         `
-      },
-      {
-        path: "/node_modules/ui-bootstrap/ui-bootstrap.tpls.js",
-        content: "module.exports = 'foo';"
-      }
-    );
-    const app = express().use(esm());
-    const response = await request(app).get(
-      "/node_modules/ui-bootstrap/index.js"
-    );
-    expect(response.text).toMatchSnapshot();
-  });
+    },
+    {
+      path: "/node_modules/ui-bootstrap/ui-bootstrap.tpls.js",
+      content: "module.exports = 'foo';"
+    }
+  );
+  const app = express().use(esm());
+  const response = await request(app).get(
+    "/node_modules/ui-bootstrap/index.js"
+  );
+  expect(response.text).toMatchSnapshot();
+});
 
-  test("handles module.exports = require(...)", async () => {
-    fs.__setFiles(
-      {
-        path: "/node_modules/foo/index.js",
-        content: `
+test("handles module.exports = require(...)", async () => {
+  fs.__setFiles(
+    {
+      path: "/node_modules/foo/index.js",
+      content: `
         module.exports = require("./bar");
       `
-      },
-      {
-        path: "/node_modules/foo/bar.js",
-        content: ""
-      }
-    );
-    const app = express().use(esm());
-    const response = await request(app).get("/node_modules/foo/index.js");
-    expect(response.text).toMatchSnapshot();
-  });
+    },
+    {
+      path: "/node_modules/foo/bar.js",
+      content: ""
+    }
+  );
+  const app = express().use(esm());
+  const response = await request(app).get("/node_modules/foo/index.js");
+  expect(response.text).toMatchSnapshot();
+});
 
-  test("handles mixed module.exports = require(...) and spare require(...)", async () => {
-    fs.__setFiles(
-      {
-        path: "/node_modules/babel-runtime/core-js/object/keys.js",
-        content: `
+test("handles mixed module.exports = require(...) and spare require(...)", async () => {
+  fs.__setFiles(
+    {
+      path: "/node_modules/babel-runtime/core-js/object/keys.js",
+      content: `
           require('../../modules/es6.object.keys');
           module.exports = require('../../modules/_core').Object.keys;
         `
-      },
-      {
-        path: "/node_modules/babel-runtime/modules/es6.object.keys.js",
-        content: ""
-      },
-      {
-        path: "/node_modules/babel-runtime/modules/_core/index.js",
-        content: ""
-      }
-    );
-    const app = express().use(esm());
-    const response = await request(app).get(
-      "/node_modules/babel-runtime/core-js/object/keys.js"
-    );
-    expect(response.text).toMatchSnapshot();
-  });
+    },
+    {
+      path: "/node_modules/babel-runtime/modules/es6.object.keys.js",
+      content: ""
+    },
+    {
+      path: "/node_modules/babel-runtime/modules/_core/index.js",
+      content: ""
+    }
+  );
+  const app = express().use(esm());
+  const response = await request(app).get(
+    "/node_modules/babel-runtime/core-js/object/keys.js"
+  );
+  expect(response.text).toMatchSnapshot();
+});
 
-  test("handles require() from directory", async () => {
-    fs.__setFiles(
-      {
-        path: "/node_modules/babel-runtime/core-js/symbol.js",
-        content: `
+test("handles require() from directory", async () => {
+  fs.__setFiles(
+    {
+      path: "/node_modules/babel-runtime/core-js/symbol.js",
+      content: `
           module.exports = { "default": require("core-js/library/fn/symbol"), __esModule: true };
         `
-      },
-      {
-        path: "/node_modules/core-js/library/fn/symbol/index.js",
-        content: ""
-      }
-    );
-    const app = express().use(esm());
-    const response = await request(app).get(
-      "/node_modules/babel-runtime/core-js/symbol.js"
-    );
-    expect(response.text).toMatchSnapshot();
+    },
+    {
+      path: "/node_modules/core-js/library/fn/symbol/index.js",
+      content: ""
+    }
+  );
+  const app = express().use(esm());
+  const response = await request(app).get(
+    "/node_modules/babel-runtime/core-js/symbol.js"
+  );
+  expect(response.text).toMatchSnapshot();
+});
+
+test("supports named exports", async () => {
+  fs.__setFiles({
+    path: "/client/index.js",
+    // export const bar = exports.bar;
+    content: `
+        !function(t){t(exports)}(function(e){e.bar='foo'})
+      `
   });
+  const app = express().use(esm());
+  const response = await request(app).get("/client/index.js");
+  expect(response.text).toMatchSnapshot();
+});
+
+test("supports named exports wrapped within a sequence expression", async () => {
+  fs.__setFiles({
+    path: "/client/index.js",
+    // export const bar = exports.bar;
+    content: `
+    !(function(e, t) {
+      "object" == typeof exports && "undefined" != typeof module
+        ? t(exports)
+        : "function" == typeof define && define.amd
+        ? define(["exports"], t)
+        : t((e.reduxLogger = e.reduxLogger || {}));
+    })(this, function(e) {
+      "use strict";
+
+      (e.defaults = L),
+        (e.createLogger = S),
+        (e.logger = T),
+        (e.default = T),
+        Object.defineProperty(e, "__esModule", {
+          value: !0
+        });
+    });
+      `
+  });
+  const app = express().use(esm());
+  const response = await request(app).get("/client/index.js");
+  expect(response.text).toMatchSnapshot();
+});
+
+test("always adds export default exports when exports is referenced", async () => {
+  fs.__setFiles({
+    path: "/client/index.js",
+    // export const bar = exports.bar;
+    content: `
+        !function(t){t(exports)}(function(e){e.bar='foo'})
+      `
+  });
+  const app = express().use(esm());
+  const response = await request(app).get("/client/index.js");
+  expect(response.text).toMatchSnapshot();
 });

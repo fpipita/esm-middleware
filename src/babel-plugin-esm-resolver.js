@@ -106,6 +106,94 @@ function resolveModule(source, nodeModulesRoot, currentModuleAbsolutePath) {
   return result;
 }
 
+/**
+ *
+ * @param {Identifier} e
+ * @param {ExpressionStatement} p
+ * @returns {Array.<AssignmentExpression>} all the assignments done to
+ * the `exports` object
+ */
+function toAssignmentExpressions(e) {
+  return function fn(p) {
+    if (p.isExpressionStatement()) {
+      p = p.get("expression");
+    }
+    if (p.isSequenceExpression()) {
+      const result = [];
+      for (const exp of p.get("expressions")) {
+        result.push(...fn(exp));
+      }
+      return result;
+    }
+    if (!p.isAssignmentExpression({ operator: "=" })) {
+      return [];
+    }
+    const left = p.get("left");
+    if (!left.isMemberExpression()) {
+      return [];
+    }
+    const object = left.get("object");
+    if (object.isIdentifier({ name: e.node.name })) {
+      return [p];
+    }
+    return [];
+  };
+}
+
+/**
+ *
+ * @param {Identifier} p
+ * @returns {Array.<AssignmentExpression>} list of all assignment expressions like
+ *  e.foo = 'bar' where `e` is a reference to the exports object.
+ */
+function findExportedBindings(p) {
+  if (p.node.name !== "exports") {
+    return [];
+  }
+  /**
+   * we're looking for a call expression where exports
+   * is one of the arguments, something like t(exports)
+   */
+  if (!p.inList || p.listKey !== "arguments") {
+    return [];
+  }
+  const callee = p.parentPath.get("callee");
+  if (!callee.isIdentifier()) {
+    return [];
+  }
+  const pfe = p.findParent(t => t.isFunctionExpression());
+  const calleePosition = pfe.get("params").findIndex(p => {
+    return p.isIdentifier() && p.node.name === callee.node.name;
+  });
+  if (calleePosition === -1) {
+    return [];
+  }
+  const factoryCall = pfe.findParent(t => t.isCallExpression());
+  if (!factoryCall) {
+    return [];
+  }
+  const ffe = factoryCall.get("arguments." + calleePosition);
+  /**
+   * it's the identifier referencing the exports object
+   * within the function expression where the exported bindings
+   * are actually assigned to the exports object
+   */
+  const e = ffe.get("params." + p.key);
+  if (!e) {
+    return [];
+  }
+  /**
+   * now we just need to look for all the assignment expressions
+   * where the left node is a member expression having the `e`
+   * identifier as the object node
+   */
+  return ffe
+    .get("body")
+    .get("body")
+    .map(toAssignmentExpressions(e))
+    .flat();
+}
+
 function esmResolverPluginFactory({
   currentModuleAbsolutePath,
   nodeModulesRoot = path.resolve("node_modules")
@@ -115,17 +203,56 @@ function esmResolverPluginFactory({
       visitor: {
         Program: {
           exit(p) {
-            if (p.node.body.some(t.isModuleDeclaration)) {
-              return;
+            if (
+              p.scope.hasOwnBinding("exports") &&
+              !p.get("body").find(p => p.isExportDefaultDeclaration())
+            ) {
+              const edd = t.exportDefaultDeclaration(
+                p.scope.getBinding("exports").identifier
+              );
+              p.pushContainer("body", edd);
             }
-            p.unshiftContainer(
-              "body",
-              template.ast`
-                const module = { exports: {} };
-                const exports = module.exports;
-                export default module.exports;
-              `
-            );
+          }
+        },
+        Identifier(p) {
+          const program = p.findParent(t => t.isProgram());
+          const ae = findExportedBindings(p);
+          for (let expr of ae) {
+            // we make sure the exports binding is available on the root scope
+            if (!p.scope.hasBinding("exports")) {
+              program.unshiftContainer(
+                "body",
+                template.ast`
+                  const module = { exports: {} };
+                  const exports = module.exports;
+                `
+              );
+              const exportsPath = program.get("body").find(p => {
+                return (
+                  p.isVariableDeclaration() &&
+                  p
+                    .get("declarations.0")
+                    .get("id")
+                    .isIdentifier({ name: "exports" })
+                );
+              });
+              program.scope.registerBinding("const", exportsPath);
+            }
+            // turns exports.foo = 'bar' into export const foo = exports.foo;
+            const e = t.identifier("exports");
+            const pr = t.identifier(expr.get("left").get("property").node.name);
+            const me = t.memberExpression(e, pr);
+            if (pr.name === "default") {
+              // add export default declaration if the named export's name is `default`
+              const edd = t.exportDefaultDeclaration(me);
+              program.pushContainer("body", edd);
+              continue;
+            }
+            const vd = t.variableDeclarator(pr, me);
+            const vad = t.variableDeclaration("const", [vd]);
+            const es = t.exportSpecifier(pr, pr);
+            const end = t.exportNamedDeclaration(vad, [es]);
+            program.pushContainer("body", end);
           }
         },
         AssignmentExpression: {

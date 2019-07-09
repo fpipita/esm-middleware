@@ -76,7 +76,7 @@ import _ from "lodash";
 |`{`|Type|Default value|Description|
 |:---|:---|:---|:---|
 |`cache`|`Boolean`|`true`|if `true`, modules are **cached**.
-|`modulesRootDirectory`|`String`|`path.resolve("node_modules")`|it is an absolute path to the folder containing `npm` packages.
+|`nodeModulesRoot`|`String`|`path.resolve("node_modules")`|it is an absolute path to the folder containing `npm` packages.
 |`}`|||
 
 Furthermore, the middleware implements a tiny web API which controls whether a certain module should be skipped from processing.
