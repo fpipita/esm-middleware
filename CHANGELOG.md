@@ -1,3 +1,9 @@
+## [1.1.2](https://github.com/fpipita/esm-middleware/compare/v1.1.1...v1.1.2) (2019-10-12)
+
+### Bug Fixes
+
+- handle assignment to exports object ([d63946d](https://github.com/fpipita/esm-middleware/commit/d63946d840fccd6a1ef55e0b43d20b04816a399f))
+
 ## [1.1.1](https://github.com/fpipita/esm-middleware/compare/v1.1.0...v1.1.1) (2019-10-12)
 
 ### Bug Fixes
