@@ -10,9 +10,6 @@ const JS_FILE_PATTERN = /\.(js|mjs|json)$/;
 const MODULE_SPECIFIER_PATTERN = /^[./]/;
 const PATH_SEPARATOR_REPLACER = new RegExp(path.sep, "g");
 
-const buildExportDefault = template(`
-  export default %%exportDefaultDeclaration%%;
-`);
 const buildImportWithNoBinding = template(`
   import %%importSpecifier%%;
 `);
@@ -233,13 +230,16 @@ function esmResolverPluginFactory({
       visitor: {
         Program: {
           exit(p) {
-            const evd = findVariableDeclaration(p, "exports");
+            const evd = findVariableDeclaration(p, "module");
             if (
               evd &&
               !p.get("body").find(p => p.isExportDefaultDeclaration())
             ) {
               const edd = t.exportDefaultDeclaration(
-                evd.get("declarations.0").get("id").node
+                t.memberExpression(
+                  t.identifier("module"),
+                  t.identifier("exports")
+                )
               );
               p.pushContainer("body", edd);
             }
@@ -284,9 +284,7 @@ function esmResolverPluginFactory({
               return;
             }
             p.replaceWithMultiple(
-              buildExportDefault({
-                exportDefaultDeclaration: p.get("right").node
-              })
+              t.exportDefaultDeclaration(p.get("right").node)
             );
           }
         },

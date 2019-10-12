@@ -11,7 +11,7 @@ const exports = module.exports;
   e.bar = 'foo';
 });
 export const bar = exports.bar;
-export default exports;"
+export default module.exports;"
 `;
 
 exports[`assignment to a property on module.exports object 1`] = `
@@ -21,7 +21,7 @@ const module = {
 };
 const exports = module.exports;
 module.exports.encode = _require;
-export default exports;"
+export default module.exports;"
 `;
 
 exports[`assignment to property on exports object 1`] = `
@@ -31,7 +31,7 @@ const module = {
 };
 const exports = module.exports;
 exports.Any = _require;
-export default exports;"
+export default module.exports;"
 `;
 
 exports[`caches modules by default 1`] = `"import foo from \\"/node_modules/foo/es/index.js\\";"`;
@@ -109,7 +109,7 @@ const exports = module.exports;
 });
 const x = 1;
 export const foo = exports.foo;
-export default exports;"
+export default module.exports;"
 `;
 
 exports[`supports fine-grained import from package 1`] = `"import foo from \\"/node_modules/@foo/foo.js\\";"`;
@@ -125,7 +125,7 @@ const exports = module.exports;
   e.bar = 'foo';
 });
 export const bar = exports.bar;
-export default exports;"
+export default module.exports;"
 `;
 
 exports[`supports named exports wrapped within a sequence expression 1`] = `
