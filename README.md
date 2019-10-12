@@ -110,6 +110,24 @@ import myModule from "myModule";
 myModule.bar();
 ```
 
+In version `1.1.0`, basic support for UMD CommonJS named exports was added.
+So, if the requested module is packaged as a `UMD` module, it will be possible to do:
+
+```javascript
+// let's pretend this is the file an hypothetical module named
+// "umd-module" package json main's field points to
+!function(t){t(exports)}(function(e){e.bar='foo'})
+
+// in your source code, you can request "bar" by writing:
+import { bar } from "umd-module";
+console.log(bar);
+
+// you can still use the default export though, it will always
+// be made available for backward compatibility
+import umdModule from "umd-module";
+console.log(umdModule.bar);
+```
+
 ### `<script>` tags
 
 Any module loaded through a `<script>` tag, should be requested by specifing an extension for which the [`mime`](https://www.npmjs.com/package/mime) module returns a `MIME type` of `application/javascript`, e.g.
