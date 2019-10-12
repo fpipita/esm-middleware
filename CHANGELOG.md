@@ -1,3 +1,9 @@
+# [1.2.0](https://github.com/fpipita/esm-middleware/compare/v1.1.2...v1.2.0) (2019-10-12)
+
+### Features
+
+- handle modules exporting json files ([c6b99ca](https://github.com/fpipita/esm-middleware/commit/c6b99ca09f0315d9bae7b8c7b5257398b3f70983))
+
 ## [1.1.2](https://github.com/fpipita/esm-middleware/compare/v1.1.1...v1.1.2) (2019-10-12)
 
 ### Bug Fixes
