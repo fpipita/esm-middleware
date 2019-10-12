@@ -1,3 +1,9 @@
+## [1.2.1](https://github.com/fpipita/esm-middleware/compare/v1.2.0...v1.2.1) (2019-10-12)
+
+### Bug Fixes
+
+- use module.exports as default export ([db7a7c4](https://github.com/fpipita/esm-middleware/commit/db7a7c42cdb50444598042b1d7686c1deff1839e))
+
 # [1.2.0](https://github.com/fpipita/esm-middleware/compare/v1.1.2...v1.2.0) (2019-10-12)
 
 ### Features
