@@ -11,8 +11,10 @@ function esmMiddlewareFactory({
   const esmCache = new Map();
 
   return (req, res, next) => {
+    const mimeType = mime.lookup(req.originalUrl);
     if (
-      mime.lookup(req.originalUrl) !== "application/javascript" ||
+      (mimeType !== "application/javascript" &&
+        mimeType !== "application/json") ||
       req.query.nomodule
     ) {
       return next();
@@ -23,18 +25,24 @@ function esmMiddlewareFactory({
       if (!fs.existsSync(moduleAbsPath)) {
         return next();
       }
-      const result = babel.transformSync(fs.readFileSync(moduleAbsPath), {
-        plugins: [
-          require("babel-plugin-syntax-dynamic-import"),
-          esmResolverPlugin({
-            nodeModulesRoot,
-            currentModuleAbsolutePath: moduleAbsPath
-          })
-        ]
-      });
-      code = result.code;
-      if (cache) {
+      const content = fs.readFileSync(moduleAbsPath);
+      if (mimeType === "application/json") {
+        code = `export default ${content};`;
         esmCache.set(req.originalUrl, code);
+      } else {
+        const result = babel.transformSync(content, {
+          plugins: [
+            require("babel-plugin-syntax-dynamic-import"),
+            esmResolverPlugin({
+              nodeModulesRoot,
+              currentModuleAbsolutePath: moduleAbsPath
+            })
+          ]
+        });
+        code = result.code;
+        if (cache) {
+          esmCache.set(req.originalUrl, code);
+        }
       }
     }
     res.set("Content-Type", "application/javascript");

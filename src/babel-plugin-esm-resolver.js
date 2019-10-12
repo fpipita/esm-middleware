@@ -6,7 +6,7 @@ const template = require("@babel/template").default;
 // Babel plugin handbook https://github.com/jamiebuilds/babel-handbook/blob/master/translations/en/plugin-handbook.md
 // ESTree AST reference https://github.com/babel/babylon/blob/master/ast/spec.md
 
-const JS_FILE_PATTERN = /\.(js|mjs)$/;
+const JS_FILE_PATTERN = /\.(js|mjs|json)$/;
 const MODULE_SPECIFIER_PATTERN = /^[./]/;
 const PATH_SEPARATOR_REPLACER = new RegExp(path.sep, "g");
 

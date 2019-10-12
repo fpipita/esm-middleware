@@ -71,6 +71,13 @@ exports[`ignores node package exporting non-js code 1`] = `"export default \\"ba
 
 exports[`ignores non JavaScript modules by default 1`] = `"import bar from \\"./bar.js\\";"`;
 
+exports[`modules exporting a json file 1`] = `
+"import _require from './bar.json';
+export default _require;"
+`;
+
+exports[`modules exporting a json file 2`] = `"export default {\\"x\\":1};"`;
+
 exports[`prioritizes JavaScript modules over directories 1`] = `"import foo from \\"./foo.js\\";"`;
 
 exports[`replaces top-level require() with import statement 1`] = `

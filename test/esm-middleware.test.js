@@ -469,3 +469,21 @@ test("assignment to property on exports object", async () => {
   const response = await request(app).get("/node_modules/foo/index.js");
   expect(response.text).toMatchSnapshot();
 });
+
+test("modules exporting a json file", async () => {
+  fs.__setFiles(
+    {
+      path: "/node_modules/foo/index.js",
+      content: "module.exports = require('./bar.json');"
+    },
+    {
+      path: "/node_modules/foo/bar.json",
+      content: JSON.stringify({ x: 1 })
+    }
+  );
+  const app = express().use(esm());
+  const r1 = await request(app).get("/node_modules/foo/index.js");
+  expect(r1.text).toMatchSnapshot();
+  const r2 = await request(app).get("/node_modules/foo/bar.json");
+  expect(r2.text).toMatchSnapshot();
+});
