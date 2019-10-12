@@ -342,6 +342,9 @@ function esmResolverPluginFactory({
           ) {
             addExportsVariableDeclarationIfNotPresent(p);
           }
+          if (p.get("object").isIdentifier({ name: "exports" })) {
+            addExportsVariableDeclarationIfNotPresent(p);
+          }
         }
       }
     };

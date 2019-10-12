@@ -453,3 +453,19 @@ test("assignment to a property on module.exports object", async () => {
   const response = await request(app).get("/node_modules/foo/index.js");
   expect(response.text).toMatchSnapshot();
 });
+
+test("assignment to property on exports object", async () => {
+  fs.__setFiles(
+    {
+      path: "/node_modules/foo/index.js",
+      content: "exports.Any = require('./properties/Any/regex');"
+    },
+    {
+      path: "/node_modules/foo/properties/Any/regex.js",
+      content: "module.exports = 1"
+    }
+  );
+  const app = express().use(esm());
+  const response = await request(app).get("/node_modules/foo/index.js");
+  expect(response.text).toMatchSnapshot();
+});

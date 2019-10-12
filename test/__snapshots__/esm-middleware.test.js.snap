@@ -24,6 +24,16 @@ module.exports.encode = _require;
 export default exports;"
 `;
 
+exports[`assignment to property on exports object 1`] = `
+"import _require from \\"./properties/Any/regex.js\\";
+const module = {
+  exports: {}
+};
+const exports = module.exports;
+exports.Any = _require;
+export default exports;"
+`;
+
 exports[`caches modules by default 1`] = `"import foo from \\"/node_modules/foo/es/index.js\\";"`;
 
 exports[`can import from directory with index.js file inside 1`] = `"import foo from \\"./foo/index.js\\";"`;
