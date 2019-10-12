@@ -14,6 +14,16 @@ export const bar = exports.bar;
 export default exports;"
 `;
 
+exports[`assignment to a property on module.exports object 1`] = `
+"import _require from \\"./encode.js\\";
+const module = {
+  exports: {}
+};
+const exports = module.exports;
+module.exports.encode = _require;
+export default exports;"
+`;
+
 exports[`caches modules by default 1`] = `"import foo from \\"/node_modules/foo/es/index.js\\";"`;
 
 exports[`can import from directory with index.js file inside 1`] = `"import foo from \\"./foo/index.js\\";"`;

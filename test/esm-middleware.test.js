@@ -437,3 +437,19 @@ test("always adds export default exports when exports is referenced", async () =
   const response = await request(app).get("/client/index.js");
   expect(response.text).toMatchSnapshot();
 });
+
+test("assignment to a property on module.exports object", async () => {
+  fs.__setFiles(
+    {
+      path: "/node_modules/foo/index.js",
+      content: "module.exports.encode = require('./encode');"
+    },
+    {
+      path: "/node_modules/foo/encode.js",
+      content: "module.exports = 1"
+    }
+  );
+  const app = express().use(esm());
+  const response = await request(app).get("/node_modules/foo/index.js");
+  expect(response.text).toMatchSnapshot();
+});

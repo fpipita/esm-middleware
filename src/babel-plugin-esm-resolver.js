@@ -194,6 +194,36 @@ function findExportedBindings(p) {
     .flat();
 }
 
+function findVariableDeclaration(p, name) {
+  return p
+    .find(p => p.isProgram())
+    .get("body")
+    .find(p => {
+      if (!p.isVariableDeclaration()) {
+        return false;
+      }
+      return p.get("declarations").find(p => {
+        return p.get("id").isIdentifier({ name: name });
+      });
+    });
+}
+
+function addExportsVariableDeclarationIfNotPresent(p) {
+  const program = p.findParent(p => p.isProgram());
+  if (findVariableDeclaration(program, "module")) {
+    return;
+  }
+  program.unshiftContainer(
+    "body",
+    template.ast`
+      const module = { exports: {} };
+      const exports = module.exports;
+    `
+  );
+  const exportsPath = findVariableDeclaration(program, "exports");
+  program.scope.registerBinding("const", exportsPath);
+}
+
 function esmResolverPluginFactory({
   currentModuleAbsolutePath,
   nodeModulesRoot = path.resolve("node_modules")
@@ -203,12 +233,13 @@ function esmResolverPluginFactory({
       visitor: {
         Program: {
           exit(p) {
+            const evd = findVariableDeclaration(p, "exports");
             if (
-              p.scope.hasOwnBinding("exports") &&
+              evd &&
               !p.get("body").find(p => p.isExportDefaultDeclaration())
             ) {
               const edd = t.exportDefaultDeclaration(
-                p.scope.getBinding("exports").identifier
+                evd.get("declarations.0").get("id").node
               );
               p.pushContainer("body", edd);
             }
@@ -219,25 +250,7 @@ function esmResolverPluginFactory({
           const ae = findExportedBindings(p);
           for (let expr of ae) {
             // we make sure the exports binding is available on the root scope
-            if (!p.scope.hasBinding("exports")) {
-              program.unshiftContainer(
-                "body",
-                template.ast`
-                  const module = { exports: {} };
-                  const exports = module.exports;
-                `
-              );
-              const exportsPath = program.get("body").find(p => {
-                return (
-                  p.isVariableDeclaration() &&
-                  p
-                    .get("declarations.0")
-                    .get("id")
-                    .isIdentifier({ name: "exports" })
-                );
-              });
-              program.scope.registerBinding("const", exportsPath);
-            }
+            addExportsVariableDeclarationIfNotPresent(p);
             // turns exports.foo = 'bar' into export const foo = exports.foo;
             const e = t.identifier("exports");
             const pr = t.identifier(expr.get("left").get("property").node.name);
@@ -319,6 +332,15 @@ function esmResolverPluginFactory({
             p.remove();
           } else {
             p.node.source.value = source.replace(PATH_SEPARATOR_REPLACER, "/");
+          }
+        },
+        MemberExpression(p) {
+          if (
+            p.get("object").isIdentifier({ name: "module" }) &&
+            p.get("property").isIdentifier({ name: "exports" }) &&
+            !p.parentPath.isAssignmentExpression()
+          ) {
+            addExportsVariableDeclarationIfNotPresent(p);
           }
         }
       }
