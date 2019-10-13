@@ -21,11 +21,14 @@ function esmMiddlewareFactory({
     }
     let code = esmCache.get(req.originalUrl);
     if (!code) {
-      const moduleAbsPath = path.resolve(req.originalUrl.replace(/^\//, ""));
-      if (!fs.existsSync(moduleAbsPath)) {
-        return next();
+      let absolutePath = req.originalUrl;
+      if (!fs.existsSync(req.originalUrl)) {
+        absolutePath = path.resolve(req.originalUrl.replace(/^\//, ""));
+        if (!fs.existsSync(absolutePath)) {
+          return next();
+        }
       }
-      const content = fs.readFileSync(moduleAbsPath);
+      const content = fs.readFileSync(absolutePath);
       if (mimeType === "application/json") {
         code = `export default ${content};`;
         esmCache.set(req.originalUrl, code);
@@ -35,7 +38,7 @@ function esmMiddlewareFactory({
             require("babel-plugin-syntax-dynamic-import"),
             esmResolverPlugin({
               nodeModulesRoot,
-              currentModuleAbsolutePath: moduleAbsPath
+              currentModuleAbsolutePath: absolutePath
             })
           ]
         });
