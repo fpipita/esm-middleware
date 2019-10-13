@@ -1,3 +1,9 @@
+## [1.2.2](https://github.com/fpipita/esm-middleware/compare/v1.2.1...v1.2.2) (2019-10-13)
+
+### Bug Fixes
+
+- use req.originalUrl "as is" when it is an existing absolute path ([f907570](https://github.com/fpipita/esm-middleware/commit/f9075703f0bc3c127c4b442fc49a89e27af1869a))
+
 ## [1.2.1](https://github.com/fpipita/esm-middleware/compare/v1.2.0...v1.2.1) (2019-10-12)
 
 ### Bug Fixes
