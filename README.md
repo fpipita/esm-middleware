@@ -168,5 +168,5 @@ won't just work.
 
 ### TODO
 
-- [ ] cache modules by their content hash
-- [ ] add conventional changelog
+- [ ] perf: cache modules by their content hash
+- [ ] build: add conventional changelog
