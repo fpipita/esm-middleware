@@ -1,3 +1,9 @@
+## [1.2.6](https://github.com/fpipita/esm-middleware/compare/v1.2.5...v1.2.6) (2019-10-14)
+
+### Bug Fixes
+
+- handle more than one require() in a single variable declaration ([1884a2a](https://github.com/fpipita/esm-middleware/commit/1884a2a38633e212d32e93d341a78d9305d79470))
+
 ## [1.2.5](https://github.com/fpipita/esm-middleware/compare/v1.2.4...v1.2.5) (2019-10-14)
 
 ### Bug Fixes
