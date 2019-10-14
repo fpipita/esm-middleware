@@ -38,6 +38,8 @@ exports[`caches modules by default 1`] = `"import foo from \\"/node_modules/foo/
 
 exports[`can import from directory with index.js file inside 1`] = `"import foo from \\"./foo/index.js\\";"`;
 
+exports[`cjs module whose main field points to an extension-less dest 1`] = `"import foo from \\"/node_modules/foo/index.js\\";"`;
+
 exports[`doesn't crash on export specifiers with no source 1`] = `
 "import foo from \\"/node_modules/foo/es/index.js\\";
 export { foo };"

@@ -53,6 +53,10 @@ test("supports `jsnext:main` key in package.json", async () => {
     {
       path: "/node_modules/foo/package.json",
       content: JSON.stringify({ "jsnext:main": "es/index.js" })
+    },
+    {
+      path: "/node_modules/foo/es/index.js",
+      content: "export default 'foo';"
     }
   );
   const response = await request(express().use(esm())).get("/client/app.js");
@@ -69,6 +73,10 @@ test("caches modules by default", async () => {
     {
       path: "/node_modules/foo/package.json",
       content: JSON.stringify({ "jsnext:main": "es/index.js" })
+    },
+    {
+      path: "/node_modules/foo/es/index.js",
+      content: "export default 'foo';"
     }
   );
   const app = express().use(esm());
@@ -159,6 +167,10 @@ test("doesn't crash on export specifiers with no source", async () => {
     {
       path: "/node_modules/foo/package.json",
       content: JSON.stringify({ module: "es/index.js" })
+    },
+    {
+      path: "/node_modules/foo/es/index.js",
+      content: "export default 'foo';"
     }
   );
   const response = await request(express().use(esm())).get("/client/app.js");
@@ -486,4 +498,24 @@ test("modules exporting a json file", async () => {
   expect(r1.text).toMatchSnapshot();
   const r2 = await request(app).get("/node_modules/foo/bar.json");
   expect(r2.text).toMatchSnapshot();
+});
+
+test("cjs module whose main field points to an extension-less dest", async () => {
+  fs.__setFiles(
+    {
+      path: "/app.js",
+      content: "import foo from 'foo';"
+    },
+    {
+      path: "/node_modules/foo/index.js",
+      content: "module.exports = 'foo';"
+    },
+    {
+      path: "/node_modules/foo/package.json",
+      content: JSON.stringify({ main: "./index" })
+    }
+  );
+  const app = express().use(esm());
+  const r1 = await request(app).get("/app.js");
+  expect(r1.text).toMatchSnapshot();
 });

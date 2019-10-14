@@ -16,7 +16,7 @@ yarn add esm-middleware
 
 On the server side, just create an `Express` app and attach the `esm-middleware`:
 
-__server/server.js__
+**server/server.js**
 
 ```javascript
 const express = require("express");
@@ -61,7 +61,7 @@ npm install lodash
 
 Then, in our client side code, we would just import Lodash as:
 
-__client/app.js__
+**client/app.js**
 
 ```javascript
 import _ from "lodash";
@@ -73,11 +73,11 @@ import _ from "lodash";
 
 `esm-middleware` exports a factory function which takes a single options object argument:
 
-|`{`|Type|Default value|Description|
-|:---|:---|:---|:---|
-|`cache`|`Boolean`|`true`|if `true`, modules are **cached**.
-|`nodeModulesRoot`|`String`|`path.resolve("node_modules")`|it is an absolute path to the folder containing `npm` packages.
-|`}`|||
+| `{`               | Type      | Default value                  | Description                                                     |
+| :---------------- | :-------- | :----------------------------- | :-------------------------------------------------------------- |
+| `cache`           | `Boolean` | `true`                         | if `true`, modules are **cached**.                              |
+| `nodeModulesRoot` | `String`  | `path.resolve("node_modules")` | it is an absolute path to the folder containing `npm` packages. |
+| `}`               |           |                                |
 
 Furthermore, the middleware implements a tiny web API which controls whether a certain module should be skipped from processing.
 
@@ -116,7 +116,11 @@ So, if the requested module is packaged as a `UMD` module, it will be possible t
 ```javascript
 // let's pretend this is the file an hypothetical module named
 // "umd-module" package json main's field points to
-!function(t){t(exports)}(function(e){e.bar='foo'})
+!(function(t) {
+  t(exports);
+})(function(e) {
+  e.bar = "foo";
+});
 
 // in your source code, you can request "bar" by writing:
 import { bar } from "umd-module";
@@ -161,3 +165,8 @@ import EventEmitter from "events";
 ```
 
 won't just work.
+
+### TODO
+
+- [ ] cache modules by their content hash
+- [ ] add conventional changelog

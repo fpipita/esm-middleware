@@ -71,7 +71,14 @@ function resolveNodeModuleFromPackageJson(dir) {
   if (!m) {
     return null;
   }
-  return path.resolve(dir, m);
+  const finalPath = path.resolve(dir, m);
+  if (fs.existsSync(finalPath)) {
+    return finalPath;
+  }
+  if (finalPath.endsWith(".js")) {
+    return null;
+  }
+  return finalPath + ".js";
 }
 
 function resolveNodeModule(source, nodeModulesRoot) {
