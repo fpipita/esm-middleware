@@ -155,6 +155,11 @@ export const logger = exports.logger;
 export default exports.default;"
 `;
 
+exports[`variable declaration with more than one declarator 1`] = `
+"import t from \\"./t.js\\";
+import y from \\"./y.js\\";"
+`;
+
 exports[`yet another (simplified) umd use case from package type-detect 1`] = `
 "const module = {
   exports: {}

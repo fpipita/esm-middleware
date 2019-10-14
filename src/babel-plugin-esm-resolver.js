@@ -298,12 +298,14 @@ function esmResolverPluginFactory({
              * the require() call is the init expression in a simple variable
              * declaration statement, something like
              *
-             *     var foo = require('./foo');
+             *     var x = require("./x"),
+             *         y = require("./y");
              *
-             * in this case, we simply replace the require call with an
+             * in this case, we simply replace each require call with an
              * import statement, e.g.
              *
-             *     import foo from "./foo";
+             *     import x from "./x";
+             *     import y from "./y"
              *
              */
             const idefspec = t.importDefaultSpecifier(
@@ -314,7 +316,7 @@ function esmResolverPluginFactory({
               p.get("arguments.0").node
             );
             p.findParent(p => p.isProgram()).unshiftContainer("body", idefdec);
-            p.getStatementParent().remove();
+            p.parentPath.remove();
             return;
           }
           if (p.getStatementParent().get("expression") === p) {

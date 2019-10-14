@@ -546,3 +546,23 @@ test("avoid early usage of imported bindings when not needed", async () => {
   const r1 = await request(app).get("/x.js");
   expect(r1.text).toMatchSnapshot();
 });
+
+test("variable declaration with more than one declarator", async () => {
+  fs.__setFiles(
+    {
+      path: "/x.js",
+      content: "var y = require('./y'), t = require('./t');"
+    },
+    {
+      path: "/y.js",
+      content: "module.exports = 'y';"
+    },
+    {
+      path: "/t.js",
+      content: "module.exports = 't';"
+    }
+  );
+  const app = express().use(esm());
+  const r1 = await request(app).get("/x.js");
+  expect(r1.text).toMatchSnapshot();
+});
