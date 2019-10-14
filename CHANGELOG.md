@@ -1,3 +1,9 @@
+## [1.2.3](https://github.com/fpipita/esm-middleware/compare/v1.2.2...v1.2.3) (2019-10-14)
+
+### Bug Fixes
+
+- handle extension-less cjs module's main field ([48b401b](https://github.com/fpipita/esm-middleware/commit/48b401b3e7fb2ef45d27793b5e6c196cc110484f))
+
 ## [1.2.2](https://github.com/fpipita/esm-middleware/compare/v1.2.1...v1.2.2) (2019-10-13)
 
 ### Bug Fixes
