@@ -34,6 +34,11 @@ exports.Any = _require;
 export default module.exports;"
 `;
 
+exports[`avoid early usage of imported bindings when not needed 1`] = `
+"import y from \\"./y.js\\";
+export default 'x';"
+`;
+
 exports[`caches modules by default 1`] = `"import foo from \\"/node_modules/foo/es/index.js\\";"`;
 
 exports[`can import from directory with index.js file inside 1`] = `"import foo from \\"./foo/index.js\\";"`;
@@ -51,8 +56,8 @@ export default \\"ui.bootstrap\\";"
 `;
 
 exports[`handles mixed module.exports = require(...) and spare require(...) 1`] = `
-"import \\"../../modules/es6.object.keys.js\\";
-import _require from \\"../../modules/_core/index.js\\";
+"import _require from \\"../../modules/_core/index.js\\";
+import \\"../../modules/es6.object.keys.js\\";
 export default _require.Object.keys;"
 `;
 

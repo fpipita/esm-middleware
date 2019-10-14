@@ -18,16 +18,6 @@ const buildImportBindingFromDefault = template(`
   import %%binding%% from %%source%%;
 `);
 
-function findLastImportStatementPath(programPath) {
-  const { body } = programPath.node;
-  for (let i = body.length - 1; i >= 0; i--) {
-    if (t.isImportDeclaration(body[i])) {
-      return programPath.get(`body.${i}`);
-    }
-  }
-  return null;
-}
-
 function joinRelativePath(...paths) {
   const result = path.join(...paths);
   if (path.isAbsolute(result) || MODULE_SPECIFIER_PATTERN.test(result)) {
@@ -295,34 +285,80 @@ function esmResolverPluginFactory({
             );
           }
         },
+        /**
+         *
+         * @param {babel.NodePath} p
+         */
         CallExpression(p) {
-          if (p.scope.parent !== null) {
-            return;
-          }
           if (!p.get("callee").isIdentifier({ name: "require" })) {
             return;
           }
-          const program = p.findParent(path => path.isProgram());
-          let importDeclaration;
+          if (p.parentPath.isVariableDeclarator()) {
+            /**
+             * the require() call is the init expression in a simple variable
+             * declaration statement, something like
+             *
+             *     var foo = require('./foo');
+             *
+             * in this case, we simply replace the require call with an
+             * import statement, e.g.
+             *
+             *     import foo from "./foo";
+             *
+             */
+            const idefspec = t.importDefaultSpecifier(
+              p.parentPath.get("id").node
+            );
+            const idefdec = t.importDeclaration(
+              [idefspec],
+              p.get("arguments.0").node
+            );
+            p.findParent(p => p.isProgram()).unshiftContainer("body", idefdec);
+            p.getStatementParent().remove();
+            return;
+          }
           if (p.getStatementParent().get("expression") === p) {
-            importDeclaration = buildImportWithNoBinding({
+            /**
+             * if we get here, we are on a standalone require call (the parent
+             * statement is the require() call expression itself), e.g.
+             *
+             *    require("./foo");
+             *
+             * we simply replace it with an import default declaration
+             * with no specifiers, e.g.
+             *
+             *    import "./foo";
+             */
+            const standalone = buildImportWithNoBinding({
               importSpecifier: p.get("arguments.0").node
             });
             p.remove();
-          } else {
-            const binding = p.scope.generateUidIdentifier("require");
-            importDeclaration = buildImportBindingFromDefault({
-              binding,
-              source: p.get("arguments.0").node
-            });
-            p.replaceWith(binding);
+            p.find(p => p.isProgram()).unshiftContainer("body", standalone);
+            return;
           }
-          const lastImportStatement = findLastImportStatementPath(program);
-          if (lastImportStatement) {
-            lastImportStatement.insertAfter(importDeclaration);
-          } else {
-            program.unshiftContainer("body", importDeclaration);
-          }
+          /**
+           * general way to process require() calls, it turns something like:
+           *
+           *    module.exports = require("bar");
+           *
+           * into
+           *
+           *    import _require from "bar";
+           *    export default _require;
+           *
+           * that is, it replaces the require call with a unique identifier and
+           * assigns the imported binding to it.
+           *
+           * TODO: this algorithm needs to be improved because it might cause
+           * issues with cyclic dependencies.
+           */
+          const binding = p.scope.generateUidIdentifier("require");
+          const idec = buildImportBindingFromDefault({
+            binding,
+            source: p.get("arguments.0").node
+          });
+          p.replaceWith(binding);
+          p.find(p => p.isProgram()).unshiftContainer("body", idec);
         },
         ModuleDeclaration(p) {
           if (!p.node.source) {
