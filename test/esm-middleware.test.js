@@ -519,3 +519,14 @@ test("cjs module whose main field points to an extension-less dest", async () =>
   const r1 = await request(app).get("/app.js");
   expect(r1.text).toMatchSnapshot();
 });
+
+test("yet another (simplified) umd use case from package type-detect", async () => {
+  fs.__setFiles({
+    path: "/app.js",
+    content:
+      "(function(global,factory){module.exports=factory()})(this,function(){});"
+  });
+  const app = express().use(esm());
+  const r1 = await request(app).get("/app.js");
+  expect(r1.text).toMatchSnapshot();
+});

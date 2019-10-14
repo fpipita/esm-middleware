@@ -342,10 +342,29 @@ function esmResolverPluginFactory({
         MemberExpression(p) {
           if (
             p.get("object").isIdentifier({ name: "module" }) &&
-            p.get("property").isIdentifier({ name: "exports" }) &&
-            !p.parentPath.isAssignmentExpression()
+            p.get("property").isIdentifier({ name: "exports" })
           ) {
-            addExportsVariableDeclarationIfNotPresent(p);
+            if (
+              p.getFunctionParent() !== null ||
+              !p.parentPath.isAssignmentExpression()
+            ) {
+              /**
+               * if we get here, we assume two cases:
+               *
+               * 1. module.exports is being referenced by the function which
+               *    checks the current environment and invokes the factory, e.g.
+               *
+               *      (function(global,factory){module.exports=factory()})(this,function(){});
+               *
+               * 2. a property is being added to the module.exports object, e.g.
+               *
+               *      module.exports.foo = "bar";
+               *
+               * in both cases, we inject the module and exports bindings into the top
+               * level scope
+               */
+              addExportsVariableDeclarationIfNotPresent(p);
+            }
           }
           if (p.get("object").isIdentifier({ name: "exports" })) {
             addExportsVariableDeclarationIfNotPresent(p);

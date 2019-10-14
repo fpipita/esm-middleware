@@ -149,3 +149,16 @@ export const createLogger = exports.createLogger;
 export const logger = exports.logger;
 export default exports.default;"
 `;
+
+exports[`yet another (simplified) umd use case from package type-detect 1`] = `
+"const module = {
+  exports: {}
+};
+const exports = module.exports;
+
+(function (global, factory) {
+  module.exports = factory();
+})(this, function () {});
+
+export default module.exports;"
+`;
