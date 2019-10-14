@@ -1,3 +1,9 @@
+## [1.2.5](https://github.com/fpipita/esm-middleware/compare/v1.2.4...v1.2.5) (2019-10-14)
+
+### Bug Fixes
+
+- avoid early usage of imported bindings when not needed ([3b603f8](https://github.com/fpipita/esm-middleware/commit/3b603f831bde84a1c876d2bff4fdca2d6ce21545))
+
 ## [1.2.4](https://github.com/fpipita/esm-middleware/compare/v1.2.3...v1.2.4) (2019-10-14)
 
 ### Bug Fixes
