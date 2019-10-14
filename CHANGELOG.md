@@ -1,3 +1,9 @@
+## [1.2.4](https://github.com/fpipita/esm-middleware/compare/v1.2.3...v1.2.4) (2019-10-14)
+
+### Bug Fixes
+
+- always expose node env when module.exports is overwritten ([1b98414](https://github.com/fpipita/esm-middleware/commit/1b98414bce1fbfd8d5fdd83bebb40ae37d7bca8d))
+
 ## [1.2.3](https://github.com/fpipita/esm-middleware/compare/v1.2.2...v1.2.3) (2019-10-14)
 
 ### Bug Fixes
