@@ -67,26 +67,14 @@
 
 ### Bug Fixes
 
-- import mime from mime-types package. ([e86b713](https://github.com/fpipita/esm-middleware/commit/e86b713))
+- import mime from mime-types package. ([e86b713](https://github.com/fpipita/esm-middleware/commit/e86b7139ef7113bcdb6a711449f0816bb15609a1))
 
 ## [1.0.3](https://github.com/fpipita/esm-middleware/compare/v1.0.2...v1.0.3) (2019-05-01)
 
-<a name="1.0.2"></a>
-
 ## [1.0.2](https://github.com/fpipita/esm-middleware/compare/v1.0.1...v1.0.2) (2018-09-16)
 
-<a name="1.0.1"></a>
-
-## 1.0.1 (2018-09-11)
+## [1.0.1](https://github.com/fpipita/esm-middleware/compare/2ae1d5f8ead0ca73a9ac96d975df2c35b24c4d78...v1.0.1) (2018-09-11)
 
 ### Features
 
-- add first working implementation. ([2ae1d5f](https://github.com/fpipita/esm-middleware/commit/2ae1d5f))
-
-<a name="1.0.0"></a>
-
-# 1.0.0 (2018-09-11)
-
-### Features
-
-- add first working implementation. ([2ae1d5f](https://github.com/fpipita/esm-middleware/commit/2ae1d5f))
+- add first working implementation. ([2ae1d5f](https://github.com/fpipita/esm-middleware/commit/2ae1d5f8ead0ca73a9ac96d975df2c35b24c4d78))

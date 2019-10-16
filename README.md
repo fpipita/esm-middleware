@@ -169,4 +169,4 @@ won't just work.
 ### TODO
 
 - [ ] perf: cache modules by their content hash
-- [ ] build: add conventional changelog
+- [x] build: add conventional changelog
