@@ -1,22 +1,15 @@
 const path = require("path");
 const fs = require("fs");
 const t = require("@babel/types");
-const template = require("@babel/template").default;
 
-// Babel plugin handbook https://github.com/jamiebuilds/babel-handbook/blob/master/translations/en/plugin-handbook.md
-// ESTree AST reference https://github.com/babel/babylon/blob/master/ast/spec.md
+/**
+ * Babel plugin handbook https://github.com/jamiebuilds/babel-handbook/blob/master/translations/en/plugin-handbook.md
+ * ESTree AST reference https://github.com/babel/babylon/blob/master/ast/spec.md
+ */
 
 const JS_FILE_PATTERN = /\.(js|mjs|json)$/;
 const MODULE_SPECIFIER_PATTERN = /^[./]/;
 const PATH_SEPARATOR_REPLACER = new RegExp(path.sep, "g");
-
-const buildImportWithNoBinding = template(`
-  import %%importSpecifier%%;
-`);
-
-const buildImportBindingFromDefault = template(`
-  import %%binding%% from %%source%%;
-`);
 
 function joinRelativePath(...paths) {
   const result = path.join(...paths);
@@ -39,9 +32,11 @@ function resolveUserModule(source, currentModuleAbsolutePath) {
   if (stat.isFile()) {
     return source;
   }
-  // if we get here, source is a directory, before to look for
-  // package.json, let's check whether a module with the same
-  // basename exists
+  /**
+   * if we get here, source is a directory, before to look
+   * for package.json, let's check whether a module with
+   * the same basename exists
+   */
   return (
     resolveUserModule(source + ".js", currentModuleAbsolutePath) ||
     resolveUserModule(
@@ -101,11 +96,8 @@ function resolveModule(source, nodeModulesRoot, currentModuleAbsolutePath) {
 }
 
 /**
- *
- * @param {Identifier} e
- * @param {ExpressionStatement} p
- * @returns {Array.<AssignmentExpression>} all the assignments done to
- * the `exports` object
+ * @param {babel.types.Identifier} e
+ * @returns {function}
  */
 function toAssignmentExpressions(e) {
   return function fn(p) {
@@ -136,8 +128,8 @@ function toAssignmentExpressions(e) {
 
 /**
  *
- * @param {Identifier} p
- * @returns {Array.<AssignmentExpression>} list of all assignment expressions like
+ * @param {babel.types.Identifier} p
+ * @returns {Array.<babel.types.AssignmentExpression>} list of all assignment expressions like
  *  e.foo = 'bar' where `e` is a reference to the exports object.
  */
 function findExportedBindings(p) {
@@ -197,7 +189,7 @@ function findVariableDeclaration(p, name) {
         return false;
       }
       return p.get("declarations").find(p => {
-        return p.get("id").isIdentifier({ name: name });
+        return p.get("id").isIdentifier({ name });
       });
     });
 }
@@ -207,15 +199,24 @@ function addExportsVariableDeclarationIfNotPresent(p) {
   if (findVariableDeclaration(program, "module")) {
     return;
   }
-  program.unshiftContainer(
-    "body",
-    template.ast`
-      const module = { exports: {} };
-      const exports = module.exports;
-    `
+  const modmembexp = t.memberExpression(
+    t.identifier("module"),
+    t.identifier("exports")
   );
-  const exportsPath = findVariableDeclaration(program, "exports");
-  program.scope.registerBinding("const", exportsPath);
+  const expvdec = t.variableDeclarator(t.identifier("exports"), modmembexp);
+  const expvadec = t.variableDeclaration("const", [expvdec]);
+  program.unshiftContainer("body", expvadec);
+
+  const expprop = t.objectProperty(
+    t.identifier("exports"),
+    t.objectExpression([])
+  );
+  const modvdec = t.variableDeclarator(
+    t.identifier("module"),
+    t.objectExpression([expprop])
+  );
+  const modvadec = t.variableDeclaration("const", [modvdec]);
+  program.unshiftContainer("body", modvadec);
 }
 
 function esmResolverPluginFactory({
@@ -286,7 +287,6 @@ function esmResolverPluginFactory({
           }
         },
         /**
-         *
          * @param {babel.NodePath} p
          */
         CallExpression(p) {
@@ -331,9 +331,10 @@ function esmResolverPluginFactory({
              *
              *    import "./foo";
              */
-            const standalone = buildImportWithNoBinding({
-              importSpecifier: p.get("arguments.0").node
-            });
+            const standalone = t.importDeclaration(
+              [],
+              p.get("arguments.0").node
+            );
             p.remove();
             p.find(p => p.isProgram()).unshiftContainer("body", standalone);
             return;
@@ -355,10 +356,8 @@ function esmResolverPluginFactory({
            * issues with cyclic dependencies.
            */
           const binding = p.scope.generateUidIdentifier("require");
-          const idec = buildImportBindingFromDefault({
-            binding,
-            source: p.get("arguments.0").node
-          });
+          const ispec = t.importDefaultSpecifier(binding);
+          const idec = t.importDeclaration([ispec], p.get("arguments.0").node);
           p.replaceWith(binding);
           p.find(p => p.isProgram()).unshiftContainer("body", idec);
         },
