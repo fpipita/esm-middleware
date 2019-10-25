@@ -203,7 +203,7 @@ import EventEmitter from "events";
 
 won't just work.
 
-### Contributing
+## Contributing
 
 Only a couple guidelines to follow for now:
 
@@ -211,7 +211,7 @@ Only a couple guidelines to follow for now:
 - Run the `yarn commit` script to commit your changes as it will help produce a propertly formatted commit message which is needed in order to be able to auto-generate a matching changelog entry.
 - Always rebase your changes to the upstream's master branch before to create a pull request, so that we can avoid merge commits and keep the commit history cleaner.
 
-### TODO
+## TODO
 
 - [ ] perf: cache modules by their content hash
 - [x] build: add conventional changelog
