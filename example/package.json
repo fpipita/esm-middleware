@@ -1,0 +1,16 @@
+{
+  "name": "esm-middleware-example",
+  "version": "1.0.0",
+  "description": "esm-middleware example",
+  "main": "index.js",
+  "author": "Francesco Pipita <francesco.pipita@gmail.com>",
+  "license": "GPL-3.0",
+  "dependencies": {
+    "@fpipita/esm-middleware": "^1.2.6",
+    "express": "^4.17.1",
+    "lodash": "^4.17.15"
+  },
+  "scripts": {
+    "start": "node ./index.js"
+  }
+}

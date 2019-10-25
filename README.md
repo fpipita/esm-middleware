@@ -56,7 +56,7 @@ server.listen(3000, () => console.log("Listening on port 3000"));
 Let's now assume we wanted to use Lodash in our client side code, we first need to install it within our static `node_modules` folder:
 
 ```bash
-npm install lodash
+user@localhost:~$ yarn add lodash
 ```
 
 Then, in our client side code, we would just import Lodash as:
@@ -68,6 +68,15 @@ import _ from "lodash";
 
 // Use Lodash methods here...
 ```
+
+You can find a full working example in the `example` directory.
+After installing the example dependencies, start it with:
+
+```bash
+user@localhost:~$ yarn start
+```
+
+and point your browser to `http://localhost:3000/`.
 
 ## Public API
 
@@ -99,7 +108,7 @@ Caching can be disabled by initializing the middleware with the `{ cache: false 
 
 ### CommonJS support
 
-At the moment, `commonjs` modules are also supported but only the default export is made available to consumers (e.g. the value assigned to `module.exports`, similar to how `--experimental-modules` works in Node).
+At the moment, `commonjs` modules are also supported but only the default export is made available to consumers (e.g. the value assigned to `module.exports`).
 
 If a commonjs module has multiple named exports, you'll have to access them as properties of the default export, e.g.:
 
@@ -156,6 +165,34 @@ If the extension is omitted, the middleware will not be able to process the modu
 
 Extension can be omitted for modules requested through `import` or `export` declarations indeed.
 
+Script tags without the `src` attribute are not processed at the moment, so:
+
+```javascript
+...
+// `app` is an Express application instance.
+app.get("*", (res, req) => {
+  res.send(`
+    <!doctype html>
+    <html>
+      <head>
+        <!-- this will result in a browser error because "foo" is not a valid module specifier -->
+        <script type="module">
+          import foo from "foo";
+        </script>
+      </head>
+    </html>
+  `)
+})
+```
+
+will result in a browser error because the code
+
+```javascript
+import foo from "foo";
+```
+
+will not be transformed by the middleware.
+
 ### Node core modules
 
 Node code modules are not supported at the moment, so doing something like:
@@ -166,7 +203,18 @@ import EventEmitter from "events";
 
 won't just work.
 
+### Contributing
+
+Only a couple guidelines to follow for now:
+
+- Make sure each change which updates the package's behavior comes with some tests demonstrating the updated behavior.
+- Run the `yarn commit` script to commit your changes as it will help produce a propertly formatted commit message which is needed in order to be able to auto-generate a matching changelog entry.
+
 ### TODO
 
 - [ ] perf: cache modules by their content hash
 - [x] build: add conventional changelog
+- [ ] feat: support cjs named exports
+- [ ] feat: preserve original code formatting where possible
+- [ ] build: switch to prettier-eslint
+- [ ] feat: process script tags content
