@@ -50,6 +50,8 @@ exports[`doesn't crash on export specifiers with no source 1`] = `
 export { foo };"
 `;
 
+exports[`explicit user modules root 1`] = `"export default 'app';"`;
+
 exports[`handles exported literals 1`] = `
 "import './ui-bootstrap.tpls.js';
 export default \\"ui.bootstrap\\";"

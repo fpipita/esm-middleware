@@ -393,6 +393,8 @@ function esmResolverPluginFactory({
                *
                *      (function(global,factory){module.exports=factory()})(this,function(){});
                *
+               *    this is a quite common pattern occurring in umd modules.
+               *
                * 2. a property is being added to the module.exports object, e.g.
                *
                *      module.exports.foo = "bar";

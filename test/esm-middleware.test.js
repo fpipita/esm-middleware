@@ -4,7 +4,9 @@ const request = require("supertest");
 const esm = require("../src/esm-middleware.js");
 const fs = require("fs");
 
-beforeEach(() => fs.__setFiles());
+beforeEach(() => {
+  fs.__setFiles();
+});
 
 test("sets correct content-type", async () => {
   fs.__setFiles(
@@ -17,7 +19,9 @@ test("sets correct content-type", async () => {
       content: JSON.stringify({ module: "es/index.js" })
     }
   );
-  const response = await request(express().use(esm())).get("/client/app.js");
+  const response = await request(
+    express().use(esm({ nodeModulesRoot: "/node_modules" }))
+  ).get("/client/app.js");
   expect(response.status).toBe(200);
   expect(response.header["content-type"]).toBe(
     "application/javascript; charset=utf-8"
@@ -39,7 +43,9 @@ test("supports `module` key in package.json", async () => {
       content: "export default 'foo';"
     }
   );
-  const response = await request(express().use(esm())).get("/client/app.js");
+  const response = await request(
+    express().use(esm({ nodeModulesRoot: "/node_modules" }))
+  ).get("/client/app.js");
   expect(response.status).toEqual(200);
   expect(response.text).toMatchSnapshot();
 });
@@ -59,7 +65,9 @@ test("supports `jsnext:main` key in package.json", async () => {
       content: "export default 'foo';"
     }
   );
-  const response = await request(express().use(esm())).get("/client/app.js");
+  const response = await request(
+    express().use(esm({ nodeModulesRoot: "/node_modules" }))
+  ).get("/client/app.js");
   expect(response.status).toEqual(200);
   expect(response.text).toMatchSnapshot();
 });
@@ -79,7 +87,7 @@ test("caches modules by default", async () => {
       content: "export default 'foo';"
     }
   );
-  const app = express().use(esm());
+  const app = express().use(esm({ nodeModulesRoot: "/node_modules" }));
   await request(app).get("/client/app.js");
 
   fs.__setFiles(
@@ -99,7 +107,7 @@ test("caches modules by default", async () => {
 });
 
 test("delegates next middleware on unresolved module", async () => {
-  const app = express().use(esm());
+  const app = express().use(esm({ nodeModulesRoot: "/node_modules" }));
   const response = await request(app).get("/client/app.js");
   expect(response.status).toEqual(404);
 });
@@ -107,7 +115,7 @@ test("delegates next middleware on unresolved module", async () => {
 test("supports commonjs modules", async () => {
   fs.__setFiles(
     {
-      path: "client/app.js",
+      path: "/client/app.js",
       content: 'import foo from "foo";'
     },
     {
@@ -120,7 +128,7 @@ test("supports commonjs modules", async () => {
         "!function(e,t){t(exports)}(this,function(e){e.foo='bar'});const x=1;"
     }
   );
-  const app = express().use(esm());
+  const app = express().use(esm({ nodeModulesRoot: "/node_modules" }));
   const response1 = await request(app).get("/client/app.js");
   expect(response1.status).toEqual(200);
   expect(response1.text).toMatchSnapshot();
@@ -141,14 +149,14 @@ test("supports fine-grained import from package", async () => {
       content: "console.log('cool')"
     }
   );
-  const app = express().use(esm());
+  const app = express().use(esm({ nodeModulesRoot: "/node_modules" }));
   const response = await request(app).get("/client/app.js");
   expect(response.status).toEqual(200);
   expect(response.text).toMatchSnapshot();
 });
 
 test("skips module processing when ?nomodule=true", async () => {
-  const app = express().use(esm());
+  const app = express().use(esm({ nodeModulesRoot: "/node_modules" }));
   app.get("/client/app.js", (req, res) => {
     res.setHeader("Content-Type", "application/javascript");
     res.send(200, 'import foo from "foo";');
@@ -173,7 +181,9 @@ test("doesn't crash on export specifiers with no source", async () => {
       content: "export default 'foo';"
     }
   );
-  const response = await request(express().use(esm())).get("/client/app.js");
+  const response = await request(
+    express().use(esm({ nodeModulesRoot: "/node_modules" }))
+  ).get("/client/app.js");
   expect(response.status).toEqual(200);
   expect(response.text).toMatchSnapshot();
 });
@@ -189,7 +199,7 @@ test("resolves modules without extension", async () => {
       content: "console.log('javascript is cool!')"
     }
   );
-  const app = express().use(esm());
+  const app = express().use(esm({ nodeModulesRoot: "/node_modules" }));
   const response = await request(app).get("/client/app.js");
   expect(response.status).toEqual(200);
   expect(response.text).toMatchSnapshot();
@@ -206,7 +216,7 @@ test("resolves user modules with missing extension", async () => {
       content: "console.log('javascript is cool!')"
     }
   );
-  const app = express().use(esm());
+  const app = express().use(esm({ nodeModulesRoot: "/node_modules" }));
   const response = await request(app).get("/client/app.js");
   expect(response.status).toEqual(200);
   expect(response.text).toMatchSnapshot();
@@ -226,7 +236,7 @@ test("ignores non JavaScript modules by default", async () => {
       content: ""
     }
   );
-  const app = express().use(esm());
+  const app = express().use(esm({ nodeModulesRoot: "/node_modules" }));
   const response = await request(app).get("/client/app.js");
   expect(response.text).toMatchSnapshot();
 });
@@ -251,7 +261,7 @@ test("ignores node package exporting non-js code", async () => {
       content: "#foo {}"
     }
   );
-  const app = express().use(esm());
+  const app = express().use(esm({ nodeModulesRoot: "/node_modules" }));
   const response = await request(app).get("/client/app.js");
   expect(response.text).toMatchSnapshot();
 });
@@ -267,7 +277,7 @@ test("can import from directory with index.js file inside", async () => {
       content: "export default 'foo';"
     }
   );
-  const app = express().use(esm());
+  const app = express().use(esm({ nodeModulesRoot: "/node_modules" }));
   const response = await request(app).get("/client/app.js");
   expect(response.text).toMatchSnapshot();
 });
@@ -287,7 +297,7 @@ test("prioritizes JavaScript modules over directories", async () => {
       content: "export default 'bar';"
     }
   );
-  const app = express().use(esm());
+  const app = express().use(esm({ nodeModulesRoot: "/node_modules" }));
   const response = await request(app).get("/client/app.js");
   expect(response.text).toMatchSnapshot();
 });
@@ -306,7 +316,7 @@ test("replaces top-level require() with import statement", async () => {
       content: ""
     }
   );
-  const app = express().use(esm());
+  const app = express().use(esm({ nodeModulesRoot: "/node_modules" }));
   const response = await request(app).get("/node_modules/angular/index.js");
   expect(response.text).toMatchSnapshot();
 });
@@ -325,7 +335,7 @@ test("handles exported literals", async () => {
       content: "module.exports = 'foo';"
     }
   );
-  const app = express().use(esm());
+  const app = express().use(esm({ nodeModulesRoot: "/node_modules" }));
   const response = await request(app).get(
     "/node_modules/ui-bootstrap/index.js"
   );
@@ -345,7 +355,7 @@ test("handles module.exports = require(...)", async () => {
       content: ""
     }
   );
-  const app = express().use(esm());
+  const app = express().use(esm({ nodeModulesRoot: "/node_modules" }));
   const response = await request(app).get("/node_modules/foo/index.js");
   expect(response.text).toMatchSnapshot();
 });
@@ -368,7 +378,7 @@ test("handles mixed module.exports = require(...) and spare require(...)", async
       content: ""
     }
   );
-  const app = express().use(esm());
+  const app = express().use(esm({ nodeModulesRoot: "/node_modules" }));
   const response = await request(app).get(
     "/node_modules/babel-runtime/core-js/object/keys.js"
   );
@@ -388,7 +398,7 @@ test("handles require() from directory", async () => {
       content: ""
     }
   );
-  const app = express().use(esm());
+  const app = express().use(esm({ nodeModulesRoot: "/node_modules" }));
   const response = await request(app).get(
     "/node_modules/babel-runtime/core-js/symbol.js"
   );
@@ -403,7 +413,7 @@ test("supports named exports", async () => {
         !function(t){t(exports)}(function(e){e.bar='foo'})
       `
   });
-  const app = express().use(esm());
+  const app = express().use(esm({ nodeModulesRoot: "/node_modules" }));
   const response = await request(app).get("/client/index.js");
   expect(response.text).toMatchSnapshot();
 });
@@ -432,7 +442,7 @@ test("supports named exports wrapped within a sequence expression", async () => 
     });
       `
   });
-  const app = express().use(esm());
+  const app = express().use(esm({ nodeModulesRoot: "/node_modules" }));
   const response = await request(app).get("/client/index.js");
   expect(response.text).toMatchSnapshot();
 });
@@ -445,7 +455,7 @@ test("always adds export default exports when exports is referenced", async () =
         !function(t){t(exports)}(function(e){e.bar='foo'})
       `
   });
-  const app = express().use(esm());
+  const app = express().use(esm({ nodeModulesRoot: "/node_modules" }));
   const response = await request(app).get("/client/index.js");
   expect(response.text).toMatchSnapshot();
 });
@@ -461,7 +471,7 @@ test("assignment to a property on module.exports object", async () => {
       content: "module.exports = 1"
     }
   );
-  const app = express().use(esm());
+  const app = express().use(esm({ nodeModulesRoot: "/node_modules" }));
   const response = await request(app).get("/node_modules/foo/index.js");
   expect(response.text).toMatchSnapshot();
 });
@@ -477,7 +487,7 @@ test("assignment to property on exports object", async () => {
       content: "module.exports = 1"
     }
   );
-  const app = express().use(esm());
+  const app = express().use(esm({ nodeModulesRoot: "/node_modules" }));
   const response = await request(app).get("/node_modules/foo/index.js");
   expect(response.text).toMatchSnapshot();
 });
@@ -493,7 +503,7 @@ test("modules exporting a json file", async () => {
       content: JSON.stringify({ x: 1 })
     }
   );
-  const app = express().use(esm());
+  const app = express().use(esm({ nodeModulesRoot: "/node_modules" }));
   const r1 = await request(app).get("/node_modules/foo/index.js");
   expect(r1.text).toMatchSnapshot();
   const r2 = await request(app).get("/node_modules/foo/bar.json");
@@ -515,7 +525,7 @@ test("cjs module whose main field points to an extension-less dest", async () =>
       content: JSON.stringify({ main: "./index" })
     }
   );
-  const app = express().use(esm());
+  const app = express().use(esm({ nodeModulesRoot: "/node_modules" }));
   const r1 = await request(app).get("/app.js");
   expect(r1.text).toMatchSnapshot();
 });
@@ -526,7 +536,7 @@ test("yet another (simplified) umd use case from package type-detect", async () 
     content:
       "(function(global,factory){module.exports=factory()})(this,function(){});"
   });
-  const app = express().use(esm());
+  const app = express().use(esm({ nodeModulesRoot: "/node_modules" }));
   const r1 = await request(app).get("/app.js");
   expect(r1.text).toMatchSnapshot();
 });
@@ -542,7 +552,7 @@ test("avoid early usage of imported bindings when not needed", async () => {
       content: "module.exports = 'y';"
     }
   );
-  const app = express().use(esm());
+  const app = express().use(esm({ nodeModulesRoot: "/node_modules" }));
   const r1 = await request(app).get("/x.js");
   expect(r1.text).toMatchSnapshot();
 });
@@ -562,7 +572,20 @@ test("variable declaration with more than one declarator", async () => {
       content: "module.exports = 't';"
     }
   );
-  const app = express().use(esm());
+  const app = express().use(esm({ nodeModulesRoot: "/node_modules" }));
   const r1 = await request(app).get("/x.js");
+  expect(r1.text).toMatchSnapshot();
+});
+
+test("explicit user modules root", async () => {
+  // https://github.com/fpipita/esm-middleware/issues/4
+  fs.__setFiles({
+    path: "/client/app.js",
+    content: "export default 'app';"
+  });
+  const app = express().use(
+    esm({ nodeModulesRoot: "/node_modules", root: "/client" })
+  );
+  const r1 = await request(app).get("/app.js");
   expect(r1.text).toMatchSnapshot();
 });

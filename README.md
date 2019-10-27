@@ -146,53 +146,58 @@ console.log(umdModule.bar);
 
 Any module loaded through a `<script>` tag, should be requested by specifing an extension for which the [`mime`](https://www.npmjs.com/package/mime) module returns a `MIME type` of `application/javascript`, e.g.
 
-```javascript
-...
-// `app` is an Express application instance.
-app.get("*", (res, req) => {
-  res.send(`
-    <!doctype html>
-    <html>
-      <head>
-        <!-- Here, the module should be explicitly loaded with the .js extension -->
-        <script type="module" src="./my-module.js"></script>
-      </head>
-    </html>
-  `)
-})
+**client/index.html**
+
+```html
+<!DOCTYPE html>
+<html>
+  <head>
+    <!-- Here, the module should be explicitly loaded with the .js extension -->
+    <script type="module" src="./my-module.js"></script>
+  </head>
+</html>
 ```
 
 If the extension is omitted, the middleware will not be able to process the module.
 
 Extension can be omitted for modules requested through `import` or `export` declarations indeed.
 
-Script tags without the `src` attribute are not processed at the moment, so:
+Code within `script` tags will not be processed by the middleware, so instead of doing:
 
-```javascript
-...
-// `app` is an Express application instance.
-app.get("*", (res, req) => {
-  res.send(`
-    <!doctype html>
-    <html>
-      <head>
-        <!-- this will result in a browser error because "foo" is not a valid module specifier -->
-        <script type="module">
-          import foo from "foo";
-        </script>
-      </head>
-    </html>
-  `)
-})
+**client/index-bad.html**
+
+```html
+<!DOCTYPE html>
+<html>
+  <head>
+    <!-- this will result in a browser error because "foo" is not a valid module specifier -->
+    <script type="module">
+      import foo from "foo";
+    </script>
+  </head>
+</html>
 ```
 
-will result in a browser error because the code
+do something like:
+
+**client/index-good.html**
+
+```html
+<!DOCTYPE html>
+<html>
+  <head>
+    <script type="module" src="./my-app.js"></script>
+  </head>
+</html>
+```
+
+**client/my-app.js**
 
 ```javascript
 import foo from "foo";
 ```
 
-will not be transformed by the middleware.
+that is, make sure your app's entry point gets loaded through the `src` attribute of a `script` tag.
 
 ### Node core modules
 
@@ -220,3 +225,4 @@ Only a couple guidelines to follow for now:
 - [ ] feat: preserve original code formatting where possible
 - [ ] build: switch to prettier-eslint
 - [ ] feat: process script tags content
+- [ ] docs: add typings

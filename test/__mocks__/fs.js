@@ -1,11 +1,7 @@
-const { join, parse } = require("path");
+const { parse } = require("path");
 
 const fs = jest.genMockFromModule("fs");
 const _files = new Map();
-
-function resolve(path) {
-  return join(process.cwd(), path);
-}
 
 function findFile(
   path,
@@ -45,14 +41,14 @@ function statSync(path) {
 function __setFiles(...files) {
   _files.clear();
   files.forEach(({ path, content }) => {
-    _files.set(resolve(path), content);
+    _files.set(path, content);
   });
   return fs;
 }
 
-fs.__setFiles = __setFiles;
-fs.readFileSync = readFileSync;
-fs.statSync = statSync;
-fs.existsSync = existsSync;
-
-module.exports = fs;
+module.exports = Object.assign(fs, {
+  __setFiles,
+  readFileSync,
+  statSync,
+  existsSync
+});
