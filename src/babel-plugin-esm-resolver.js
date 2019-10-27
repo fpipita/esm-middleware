@@ -9,7 +9,7 @@ const t = require("@babel/types");
 
 const JS_FILE_PATTERN = /\.(js|mjs|json)$/;
 const MODULE_SPECIFIER_PATTERN = /^[./]/;
-const PATH_SEPARATOR_REPLACER = new RegExp(path.sep, "g");
+const PATH_SEPARATOR_REPLACER = /[/\\]+/g;
 
 function joinRelativePath(...paths) {
   const result = path.join(...paths);
