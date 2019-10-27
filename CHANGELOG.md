@@ -1,3 +1,13 @@
+# [1.3.0](https://github.com/fpipita/esm-middleware/compare/v1.2.6...v1.3.0) (2019-10-27)
+
+### Bug Fixes
+
+- Windows regex error ([#2](https://github.com/fpipita/esm-middleware/issues/2)) ([8a9e013](https://github.com/fpipita/esm-middleware/commit/8a9e0132ac2f6326158e2dec6acf2dc556d3ba69))
+
+### Features
+
+- Allow specifying a root dir ([#5](https://github.com/fpipita/esm-middleware/issues/5)) ([08caabc](https://github.com/fpipita/esm-middleware/commit/08caabc6bc97048122342e383d1d32ef8cddd242))
+
 ## [1.2.6](https://github.com/fpipita/esm-middleware/compare/v1.2.5...v1.2.6) (2019-10-14)
 
 ### Bug Fixes
