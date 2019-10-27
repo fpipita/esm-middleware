@@ -6,6 +6,7 @@ const esmResolverPlugin = require("./babel-plugin-esm-resolver.js");
 
 function esmMiddlewareFactory({
   cache = true,
+  root = path.resolve("."),
   nodeModulesRoot = path.resolve("node_modules")
 } = {}) {
   const esmCache = new Map();
@@ -25,7 +26,9 @@ function esmMiddlewareFactory({
       if (!fs.existsSync(req.originalUrl)) {
         absolutePath = path.resolve(req.originalUrl.replace(/^\//, ""));
         if (!fs.existsSync(absolutePath)) {
-          return next();
+          if (!fs.existsSync(absolutePath = path.join(root, req.originalUrl))) {
+            return next();
+          }
         }
       }
       const content = fs.readFileSync(absolutePath);
