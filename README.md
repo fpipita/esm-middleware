@@ -85,6 +85,7 @@ and point your browser to `http://localhost:3000/`.
 | `{`               | Type      | Default value                  | Description                                                     |
 | :---------------- | :-------- | :----------------------------- | :-------------------------------------------------------------- |
 | `cache`           | `Boolean` | `true`                         | if `true`, modules are **cached**.                              |
+| `root`            | `String`  | `path.resolve(".")`            | it is an absolute path to the folder containing static files.   |
 | `nodeModulesRoot` | `String`  | `path.resolve("node_modules")` | it is an absolute path to the folder containing `npm` packages. |
 | `}`               |           |                                |
 
