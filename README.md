@@ -9,7 +9,7 @@ Serve ES modules from your `node_modules` folder.
 ## Installation
 
 ```
-yarn add esm-middleware
+yarn add @fpipita/esm-middleware
 ```
 
 ## Usage
@@ -20,7 +20,7 @@ On the server side, create an `Express` app and mount the `esm-middleware`:
 
 ```javascript
 const express = require("express");
-const esm = require("esm-middleware");
+const esm = require("@fpipita/esm-middleware");
 const path = require("path");
 
 const app = express();
