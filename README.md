@@ -12,45 +12,39 @@ Serve ES modules from your `node_modules` folder.
 yarn add esm-middleware
 ```
 
-## Basic usage
+## Usage
 
-On the server side, just create an `Express` app and attach the `esm-middleware`:
+On the server side, create an `Express` app and mount the `esm-middleware`:
 
 **server/server.js**
 
 ```javascript
 const express = require("express");
 const esm = require("esm-middleware");
-const http = require("http");
 const path = require("path");
 
 const app = express();
 
 // The esm middleware should be attached to the Express app before
-// the static built-in middleware.
-app.use(esm());
-
-// Make the node_modules directory public.
-app.use("/node_modules", express.static("node_modules"));
-
-// Also, expose the directory where our client side code lives.
-app.use("/client", express.static("client"));
+// the static built-in middleware. It takes an absolute path to the
+// directory where your esm modules are located.
+app.use(esm(path.resolve("client")));
+app.use(express.static(path.resolve("client")));
 
 app.get("*", (req, res) => {
-  res.send(`
-    <!doctype html>
+  res.send(/* HTML */ `
+    <!DOCTYPE html>
     <html>
       <head>
-        <script type="module" src="/client/app.js"></script>
+        <link rel="stylesheet" href="app.css" />
+        <script type="module" src="app.js"></script>
       </head>
       <body></body>
     </html>
   `);
 });
 
-const server = http.createServer(app);
-
-server.listen(3000, () => console.log("Listening on port 3000"));
+app.listen(3000, () => console.log("Listening on port 3000"));
 ```
 
 Let's now assume we wanted to use Lodash in our client side code, we first need to install it within our static `node_modules` folder:
@@ -69,8 +63,8 @@ import _ from "lodash";
 // Use Lodash methods here...
 ```
 
-You can find a full working example in the `example` directory.
-After installing the example dependencies, start it with:
+You can find a minimal working example in the `example` directory.
+After installing the example dependencies, you can run it with:
 
 ```bash
 user@localhost:~$ yarn start
@@ -80,14 +74,39 @@ and point your browser to `http://localhost:3000/`.
 
 ## Public API
 
-`esm-middleware` exports a factory function which takes a single options object argument:
+`esm-middleware` exports a factory function with the following signature:
 
-| `{`                | Type      | Default value                  | Description                                                     |
-| :----------------- | :-------- | :----------------------------- | :-------------------------------------------------------------- |
-| `cache`            | `Boolean` | `true`                         | if `true`, modules are **cached**.                              |
-| `root`             | `String`  | `path.resolve(".")`            | it is an absolute path to the folder containing static files.   |
-| `nodeModulesRoot`  | `String`  | `path.resolve("node_modules")` | it is an absolute path to the folder containing `npm` packages. |
-| `removeUnresolved` | `Boolean` | `true`                         | if `true`, modules that couldn't be resolved are removed.       |
+```typescript
+function esmMiddlewareFactory(
+  root?: EsmMiddlewareOptions,
+  options?: EsmMiddlewareConfigObject
+): express.Handler;
+```
+
+where:
+
+- `root` **optional**, can either be an **absolute path** pointing to the folder containing your own code or an instance of the `EsmMiddlewareConfigObject`. It defaults to the **current working directory**;
+- `options` **optional**, is an instance of the `EsmMiddlewareConfigObject` interface;
+
+**esm-middleware type definitions**
+
+`EsmMiddlewareOptions` and `EsmMiddlewareConfigObject` are defined as:
+
+```typescript
+type EsmMiddlewareOptions = string | EsmMiddlewareConfigObject;
+
+interface EsmMiddlewareConfigObject {
+  root?: string;
+  nodeModulesRoot?: string;
+  removeUnresolved?: boolean;
+}
+```
+
+| `{`                | Type      | Default value                  | Description                                               |
+| :----------------- | :-------- | :----------------------------- | :-------------------------------------------------------- |
+| `root`             | `string`  | `path.resolve()`               | same as the `esmMiddlewareFactory`'s `root` parameter.    |
+| `nodeModulesRoot`  | `string`  | `path.resolve("node_modules")` | absolute path to the folder containing `npm` packages.    |
+| `removeUnresolved` | `boolean` | `true`                         | if `true`, modules that couldn't be resolved are removed. |
 | `}`                |           |                                |
 
 Furthermore, the middleware implements a tiny web API which controls whether a certain module should be skipped from processing.
@@ -102,9 +121,7 @@ import foo from "some/polyfill.js?nomodule=true";
 
 Behind the scenes, `esm-middleware` uses a tiny Babel transform that rewrites ES import/export declaration sources so that they resolve to paths that are locally available to the web server and publicly accessible by the web browser.
 
-Processed modules are parsed and transformed once. Subsequent requests are fullfilled by sending a cached version of each module.
-
-Caching can be disabled by initializing the middleware with the `{ cache: false }` option.
+Processed modules are parsed and transformed once. Subsequent requests are fullfilled by sending a **cached** version of each module. The cache **gets invalidated** when files change.
 
 ## Known limitations
 
@@ -124,46 +141,34 @@ myModule.bar();
 In version `1.1.0`, basic support for UMD CommonJS named exports was added.
 So, if the requested module is packaged as a `UMD` module, it will be possible to do:
 
+**my-app/node_modules/umd-module/index.js**
+
 ```javascript
-// let's pretend this is the file an hypothetical module named
-// "umd-module" package json main's field points to
+// let's pretend this is an hypothetical npm package's entry point
 !(function(t) {
   t(exports);
 })(function(e) {
   e.bar = "foo";
 });
+```
 
-// in your source code, you can request "bar" by writing:
+**my-app/src/app.js**
+
+```javascript
+// in your source code, you can now import "bar" as a named import:
 import { bar } from "umd-module";
-console.log(bar);
 
 // you can still use the default export though, it will always
 // be made available for backward compatibility
 import umdModule from "umd-module";
-console.log(umdModule.bar);
+
+// both will print the same thing
+console.log(umdModule.bar === bar); // will print true
 ```
 
 ### `<script>` tags
 
-Any module loaded through a `<script>` tag, should be requested by specifing an extension for which the [`mime`](https://www.npmjs.com/package/mime) module returns a `MIME type` of `application/javascript`, e.g.
-
-**client/index.html**
-
-```html
-<!DOCTYPE html>
-<html>
-  <head>
-    <!-- Here, the module should be explicitly loaded with the .js extension -->
-    <script type="module" src="./my-module.js"></script>
-  </head>
-</html>
-```
-
-If the extension is omitted, the middleware will not be able to process the module.
-
-Extension can be omitted for modules requested through `import` or `export` declarations indeed.
-
-Code within `script` tags will not be processed by the middleware, so instead of doing:
+Code within `script` tags will not be processed by the middleware, don't do this:
 
 **client/index-bad.html**
 
@@ -179,7 +184,7 @@ Code within `script` tags will not be processed by the middleware, so instead of
 </html>
 ```
 
-do something like:
+do this instead:
 
 **client/index-good.html**
 
@@ -220,10 +225,11 @@ Only a couple guidelines to follow for now:
 
 ## TODO
 
-- [ ] perf: cache modules by their content hash
+- [x] perf: cache modules by their content hash
 - [x] build: add conventional changelog
 - [ ] feat: support cjs named exports
 - [ ] feat: preserve original code formatting where possible
 - [ ] build: switch to prettier-eslint
 - [ ] feat: process script tags content
 - [ ] docs: add typings
+- [ ] chore: turn this todo list into GitHub issues

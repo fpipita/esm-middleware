@@ -4,9 +4,7 @@ const request = require("supertest");
 const esm = require("../src/esm-middleware.js");
 const fs = require("fs");
 
-beforeEach(() => {
-  fs.__setFiles();
-});
+beforeEach(() => fs.__setFiles());
 
 test("sets correct content-type", async () => {
   fs.__setFiles(
@@ -17,14 +15,18 @@ test("sets correct content-type", async () => {
     {
       path: "/node_modules/redux/package.json",
       content: JSON.stringify({ module: "es/index.js" })
+    },
+    {
+      path: "/node_modules/redux/es/index.js",
+      content: "export const createStore = () => {};"
     }
   );
-  const response = await request(
-    express().use(esm({ nodeModulesRoot: "/node_modules" }))
-  ).get("/client/app.js");
+  const app = express();
+  app.use(esm("/", { nodeModulesRoot: "/node_modules" }));
+  const response = await request(app).get("/client/app.js");
   expect(response.status).toBe(200);
-  expect(response.header["content-type"]).toBe(
-    "application/javascript; charset=utf-8"
+  expect(response.header["content-type"]).toMatchInlineSnapshot(
+    '"application/javascript; charset=utf-8"'
   );
 });
 
@@ -43,11 +45,13 @@ test("supports `module` key in package.json", async () => {
       content: "export default 'foo';"
     }
   );
-  const response = await request(
-    express().use(esm({ nodeModulesRoot: "/node_modules" }))
-  ).get("/client/app.js");
+  const app = express();
+  app.use("/client", esm("/client", { nodeModulesRoot: "/node_modules" }));
+  const response = await request(app).get("/client/app.js");
   expect(response.status).toEqual(200);
-  expect(response.text).toMatchSnapshot();
+  expect(response.text).toMatchInlineSnapshot(
+    '"import foo from \\"/node_modules/foo/es/index.js\\";"'
+  );
 });
 
 test("supports `jsnext:main` key in package.json", async () => {
@@ -65,14 +69,16 @@ test("supports `jsnext:main` key in package.json", async () => {
       content: "export default 'foo';"
     }
   );
-  const response = await request(
-    express().use(esm({ nodeModulesRoot: "/node_modules" }))
-  ).get("/client/app.js");
+  const app = express();
+  app.use(esm("/", { nodeModulesRoot: "/node_modules" }));
+  const response = await request(app).get("/client/app.js");
   expect(response.status).toEqual(200);
-  expect(response.text).toMatchSnapshot();
+  expect(response.text).toMatchInlineSnapshot(
+    '"import foo from \\"/node_modules/foo/es/index.js\\";"'
+  );
 });
 
-test("caches modules by default", async () => {
+test("cache invalidation on file change", async () => {
   fs.__setFiles(
     {
       path: "/client/app.js",
@@ -87,7 +93,8 @@ test("caches modules by default", async () => {
       content: "export default 'foo';"
     }
   );
-  const app = express().use(esm({ nodeModulesRoot: "/node_modules" }));
+  const app = express();
+  app.use(esm("/", { nodeModulesRoot: "/node_modules" }));
   await request(app).get("/client/app.js");
 
   fs.__setFiles(
@@ -98,16 +105,23 @@ test("caches modules by default", async () => {
     {
       path: "/node_modules/bar/package.json",
       content: JSON.stringify({ "jsnext:main": "es/index.js" })
+    },
+    {
+      path: "/node_modules/bar/es/index.js",
+      content: "export default 'bar';"
     }
   );
 
   const response = await request(app).get("/client/app.js");
   expect(response.status).toEqual(200);
-  expect(response.text).toMatchSnapshot();
+  expect(response.text).toMatchInlineSnapshot(
+    '"import bar from \\"/node_modules/bar/es/index.js\\";"'
+  );
 });
 
 test("delegates next middleware on unresolved module", async () => {
-  const app = express().use(esm({ nodeModulesRoot: "/node_modules" }));
+  const app = express();
+  app.use(esm("/", { nodeModulesRoot: "/node_modules" }));
   const response = await request(app).get("/client/app.js");
   expect(response.status).toEqual(404);
 });
@@ -128,14 +142,30 @@ test("supports commonjs modules", async () => {
         "!function(e,t){t(exports)}(this,function(e){e.foo='bar'});const x=1;"
     }
   );
-  const app = express().use(esm({ nodeModulesRoot: "/node_modules" }));
+  const app = express();
+  app.use(esm("/", { nodeModulesRoot: "/node_modules" }));
   const response1 = await request(app).get("/client/app.js");
   expect(response1.status).toEqual(200);
-  expect(response1.text).toMatchSnapshot();
+  expect(response1.text).toMatchInlineSnapshot(
+    '"import foo from \\"/node_modules/foo/dist/index.js\\";"'
+  );
 
   const response2 = await request(app).get("/node_modules/foo/dist/index.js");
   expect(response2.status).toEqual(200);
-  expect(response2.text).toMatchSnapshot();
+  expect(response2.text).toMatchInlineSnapshot(`
+    "const module = {
+      exports: {}
+    };
+    const exports = module.exports;
+    !function (e, t) {
+      t(exports);
+    }(this, function (e) {
+      e.foo = 'bar';
+    });
+    const x = 1;
+    export const foo = exports.foo;
+    export default module.exports;"
+  `);
 });
 
 test("supports fine-grained import from package", async () => {
@@ -149,21 +179,25 @@ test("supports fine-grained import from package", async () => {
       content: "console.log('cool')"
     }
   );
-  const app = express().use(esm({ nodeModulesRoot: "/node_modules" }));
+  const app = express();
+  app.use(esm("/", { nodeModulesRoot: "/node_modules" }));
   const response = await request(app).get("/client/app.js");
   expect(response.status).toEqual(200);
-  expect(response.text).toMatchSnapshot();
+  expect(response.text).toMatchInlineSnapshot(
+    '"import foo from \\"/node_modules/@foo/foo.js\\";"'
+  );
 });
 
 test("skips module processing when ?nomodule=true", async () => {
-  const app = express().use(esm({ nodeModulesRoot: "/node_modules" }));
+  const app = express();
+  app.use(esm("/", { nodeModulesRoot: "/node_modules" }));
   app.get("/client/app.js", (req, res) => {
     res.setHeader("Content-Type", "application/javascript");
     res.send(200, 'import foo from "foo";');
   });
   const response = await request(app).get("/client/app.js?nomodule=true");
   expect(response.status).toEqual(200);
-  expect(response.text).toMatchSnapshot();
+  expect(response.text).toMatchInlineSnapshot('"import foo from \\"foo\\";"');
 });
 
 test("doesn't crash on export specifiers with no source", async () => {
@@ -181,11 +215,14 @@ test("doesn't crash on export specifiers with no source", async () => {
       content: "export default 'foo';"
     }
   );
-  const response = await request(
-    express().use(esm({ nodeModulesRoot: "/node_modules" }))
-  ).get("/client/app.js");
+  const app = express();
+  app.use(esm("/", { nodeModulesRoot: "/node_modules" }));
+  const response = await request(app).get("/client/app.js");
   expect(response.status).toEqual(200);
-  expect(response.text).toMatchSnapshot();
+  expect(response.text).toMatchInlineSnapshot(`
+    "import foo from \\"/node_modules/foo/es/index.js\\";
+    export { foo };"
+  `);
 });
 
 test("resolves modules without extension", async () => {
@@ -199,10 +236,13 @@ test("resolves modules without extension", async () => {
       content: "console.log('javascript is cool!')"
     }
   );
-  const app = express().use(esm({ nodeModulesRoot: "/node_modules" }));
+  const app = express();
+  app.use(esm("/", { nodeModulesRoot: "/node_modules" }));
   const response = await request(app).get("/client/app.js");
   expect(response.status).toEqual(200);
-  expect(response.text).toMatchSnapshot();
+  expect(response.text).toMatchInlineSnapshot(
+    '"import foo from \\"/node_modules/@foo/foo.js\\";"'
+  );
 });
 
 test("resolves user modules with missing extension", async () => {
@@ -216,10 +256,13 @@ test("resolves user modules with missing extension", async () => {
       content: "console.log('javascript is cool!')"
     }
   );
-  const app = express().use(esm({ nodeModulesRoot: "/node_modules" }));
+  const app = express();
+  app.use(esm("/", { nodeModulesRoot: "/node_modules" }));
   const response = await request(app).get("/client/app.js");
   expect(response.status).toEqual(200);
-  expect(response.text).toMatchSnapshot();
+  expect(response.text).toMatchInlineSnapshot(
+    '"import foo from \\"./foo.js\\";"'
+  );
 });
 
 test("ignores non JavaScript modules by default", async () => {
@@ -236,9 +279,12 @@ test("ignores non JavaScript modules by default", async () => {
       content: ""
     }
   );
-  const app = express().use(esm({ nodeModulesRoot: "/node_modules" }));
+  const app = express();
+  app.use(esm("/", { nodeModulesRoot: "/node_modules" }));
   const response = await request(app).get("/client/app.js");
-  expect(response.text).toMatchSnapshot();
+  expect(response.text).toMatchInlineSnapshot(
+    '"import bar from \\"./bar.js\\";"'
+  );
 });
 
 test("ignores node package exporting non-js code", async () => {
@@ -261,9 +307,10 @@ test("ignores node package exporting non-js code", async () => {
       content: "#foo {}"
     }
   );
-  const app = express().use(esm({ nodeModulesRoot: "/node_modules" }));
+  const app = express();
+  app.use(esm("/", { nodeModulesRoot: "/node_modules" }));
   const response = await request(app).get("/client/app.js");
-  expect(response.text).toMatchSnapshot();
+  expect(response.text).toMatchInlineSnapshot('"export default \\"bar\\";"');
 });
 
 test("can import from directory with index.js file inside", async () => {
@@ -277,9 +324,12 @@ test("can import from directory with index.js file inside", async () => {
       content: "export default 'foo';"
     }
   );
-  const app = express().use(esm({ nodeModulesRoot: "/node_modules" }));
+  const app = express();
+  app.use(esm("/", { nodeModulesRoot: "/node_modules" }));
   const response = await request(app).get("/client/app.js");
-  expect(response.text).toMatchSnapshot();
+  expect(response.text).toMatchInlineSnapshot(
+    '"import foo from \\"./foo/index.js\\";"'
+  );
 });
 
 test("prioritizes JavaScript modules over directories", async () => {
@@ -297,12 +347,15 @@ test("prioritizes JavaScript modules over directories", async () => {
       content: "export default 'bar';"
     }
   );
-  const app = express().use(esm({ nodeModulesRoot: "/node_modules" }));
+  const app = express();
+  app.use(esm("/", { nodeModulesRoot: "/node_modules" }));
   const response = await request(app).get("/client/app.js");
-  expect(response.text).toMatchSnapshot();
+  expect(response.text).toMatchInlineSnapshot(
+    '"import foo from \\"./foo.js\\";"'
+  );
 });
 
-test("replaces top-level require() with import statement", async () => {
+test("replaces top-level require() with standalone import statement", async () => {
   fs.__setFiles(
     {
       path: "/node_modules/angular/index.js",
@@ -316,9 +369,13 @@ test("replaces top-level require() with import statement", async () => {
       content: ""
     }
   );
-  const app = express().use(esm({ nodeModulesRoot: "/node_modules" }));
+  const app = express();
+  app.use(esm("/", { nodeModulesRoot: "/node_modules" }));
   const response = await request(app).get("/node_modules/angular/index.js");
-  expect(response.text).toMatchSnapshot();
+  expect(response.text).toMatchInlineSnapshot(`
+    "import \\"./angular.js\\";
+    export default angular;"
+  `);
 });
 
 test("handles exported literals", async () => {
@@ -335,11 +392,15 @@ test("handles exported literals", async () => {
       content: "module.exports = 'foo';"
     }
   );
-  const app = express().use(esm({ nodeModulesRoot: "/node_modules" }));
+  const app = express();
+  app.use(esm("/", { nodeModulesRoot: "/node_modules" }));
   const response = await request(app).get(
     "/node_modules/ui-bootstrap/index.js"
   );
-  expect(response.text).toMatchSnapshot();
+  expect(response.text).toMatchInlineSnapshot(`
+    "import './ui-bootstrap.tpls.js';
+    export default \\"ui.bootstrap\\";"
+  `);
 });
 
 test("handles module.exports = require(...)", async () => {
@@ -355,9 +416,13 @@ test("handles module.exports = require(...)", async () => {
       content: ""
     }
   );
-  const app = express().use(esm({ nodeModulesRoot: "/node_modules" }));
+  const app = express();
+  app.use(esm("/", { nodeModulesRoot: "/node_modules" }));
   const response = await request(app).get("/node_modules/foo/index.js");
-  expect(response.text).toMatchSnapshot();
+  expect(response.text).toMatchInlineSnapshot(`
+    "import _require from \\"./bar.js\\";
+    export default _require;"
+  `);
 });
 
 test("handles mixed module.exports = require(...) and spare require(...)", async () => {
@@ -378,11 +443,16 @@ test("handles mixed module.exports = require(...) and spare require(...)", async
       content: ""
     }
   );
-  const app = express().use(esm({ nodeModulesRoot: "/node_modules" }));
+  const app = express();
+  app.use(esm("/", { nodeModulesRoot: "/node_modules" }));
   const response = await request(app).get(
     "/node_modules/babel-runtime/core-js/object/keys.js"
   );
-  expect(response.text).toMatchSnapshot();
+  expect(response.text).toMatchInlineSnapshot(`
+    "import _require from \\"../../modules/_core/index.js\\";
+    import \\"../../modules/es6.object.keys.js\\";
+    export default _require.Object.keys;"
+  `);
 });
 
 test("handles require() from directory", async () => {
@@ -398,11 +468,18 @@ test("handles require() from directory", async () => {
       content: ""
     }
   );
-  const app = express().use(esm({ nodeModulesRoot: "/node_modules" }));
+  const app = express();
+  app.use(esm("/", { nodeModulesRoot: "/node_modules" }));
   const response = await request(app).get(
     "/node_modules/babel-runtime/core-js/symbol.js"
   );
-  expect(response.text).toMatchSnapshot();
+  expect(response.text).toMatchInlineSnapshot(`
+    "import _require from \\"/node_modules/core-js/library/fn/symbol/index.js\\";
+    export default {
+      \\"default\\": _require,
+      __esModule: true
+    };"
+  `);
 });
 
 test("supports named exports", async () => {
@@ -413,9 +490,22 @@ test("supports named exports", async () => {
         !function(t){t(exports)}(function(e){e.bar='foo'})
       `
   });
-  const app = express().use(esm({ nodeModulesRoot: "/node_modules" }));
+  const app = express();
+  app.use(esm("/", { nodeModulesRoot: "/node_modules" }));
   const response = await request(app).get("/client/index.js");
-  expect(response.text).toMatchSnapshot();
+  expect(response.text).toMatchInlineSnapshot(`
+    "const module = {
+      exports: {}
+    };
+    const exports = module.exports;
+    !function (t) {
+      t(exports);
+    }(function (e) {
+      e.bar = 'foo';
+    });
+    export const bar = exports.bar;
+    export default module.exports;"
+  `);
 });
 
 test("supports named exports wrapped within a sequence expression", async () => {
@@ -442,9 +532,28 @@ test("supports named exports wrapped within a sequence expression", async () => 
     });
       `
   });
-  const app = express().use(esm({ nodeModulesRoot: "/node_modules" }));
+  const app = express();
+  app.use(esm("/", { nodeModulesRoot: "/node_modules" }));
   const response = await request(app).get("/client/index.js");
-  expect(response.text).toMatchSnapshot();
+  expect(response.text).toMatchInlineSnapshot(`
+    "const module = {
+      exports: {}
+    };
+    const exports = module.exports;
+    !function (e, t) {
+      \\"object\\" == typeof exports && \\"undefined\\" != typeof module ? t(exports) : \\"function\\" == typeof define && define.amd ? define([\\"exports\\"], t) : t(e.reduxLogger = e.reduxLogger || {});
+    }(this, function (e) {
+      \\"use strict\\";
+
+      e.defaults = L, e.createLogger = S, e.logger = T, e.default = T, Object.defineProperty(e, \\"__esModule\\", {
+        value: !0
+      });
+    });
+    export const defaults = exports.defaults;
+    export const createLogger = exports.createLogger;
+    export const logger = exports.logger;
+    export default exports.default;"
+  `);
 });
 
 test("always adds export default exports when exports is referenced", async () => {
@@ -455,9 +564,22 @@ test("always adds export default exports when exports is referenced", async () =
         !function(t){t(exports)}(function(e){e.bar='foo'})
       `
   });
-  const app = express().use(esm({ nodeModulesRoot: "/node_modules" }));
+  const app = express();
+  app.use(esm("/", { nodeModulesRoot: "/node_modules" }));
   const response = await request(app).get("/client/index.js");
-  expect(response.text).toMatchSnapshot();
+  expect(response.text).toMatchInlineSnapshot(`
+    "const module = {
+      exports: {}
+    };
+    const exports = module.exports;
+    !function (t) {
+      t(exports);
+    }(function (e) {
+      e.bar = 'foo';
+    });
+    export const bar = exports.bar;
+    export default module.exports;"
+  `);
 });
 
 test("assignment to a property on module.exports object", async () => {
@@ -471,9 +593,18 @@ test("assignment to a property on module.exports object", async () => {
       content: "module.exports = 1"
     }
   );
-  const app = express().use(esm({ nodeModulesRoot: "/node_modules" }));
+  const app = express();
+  app.use(esm("/", { nodeModulesRoot: "/node_modules" }));
   const response = await request(app).get("/node_modules/foo/index.js");
-  expect(response.text).toMatchSnapshot();
+  expect(response.text).toMatchInlineSnapshot(`
+    "import _require from \\"./encode.js\\";
+    const module = {
+      exports: {}
+    };
+    const exports = module.exports;
+    module.exports.encode = _require;
+    export default module.exports;"
+  `);
 });
 
 test("assignment to property on exports object", async () => {
@@ -487,9 +618,18 @@ test("assignment to property on exports object", async () => {
       content: "module.exports = 1"
     }
   );
-  const app = express().use(esm({ nodeModulesRoot: "/node_modules" }));
+  const app = express();
+  app.use(esm("/", { nodeModulesRoot: "/node_modules" }));
   const response = await request(app).get("/node_modules/foo/index.js");
-  expect(response.text).toMatchSnapshot();
+  expect(response.text).toMatchInlineSnapshot(`
+    "import _require from \\"./properties/Any/regex.js\\";
+    const module = {
+      exports: {}
+    };
+    const exports = module.exports;
+    exports.Any = _require;
+    export default module.exports;"
+  `);
 });
 
 test("modules exporting a json file", async () => {
@@ -503,11 +643,15 @@ test("modules exporting a json file", async () => {
       content: JSON.stringify({ x: 1 })
     }
   );
-  const app = express().use(esm({ nodeModulesRoot: "/node_modules" }));
+  const app = express();
+  app.use(esm("/", { nodeModulesRoot: "/node_modules" }));
   const r1 = await request(app).get("/node_modules/foo/index.js");
-  expect(r1.text).toMatchSnapshot();
+  expect(r1.text).toMatchInlineSnapshot(`
+    "import _require from './bar.json';
+    export default _require;"
+  `);
   const r2 = await request(app).get("/node_modules/foo/bar.json");
-  expect(r2.text).toMatchSnapshot();
+  expect(r2.text).toMatchInlineSnapshot('"export default {\\"x\\":1};"');
 });
 
 test("cjs module whose main field points to an extension-less dest", async () => {
@@ -525,9 +669,12 @@ test("cjs module whose main field points to an extension-less dest", async () =>
       content: JSON.stringify({ main: "./index" })
     }
   );
-  const app = express().use(esm({ nodeModulesRoot: "/node_modules" }));
+  const app = express();
+  app.use(esm("/", { nodeModulesRoot: "/node_modules" }));
   const r1 = await request(app).get("/app.js");
-  expect(r1.text).toMatchSnapshot();
+  expect(r1.text).toMatchInlineSnapshot(
+    '"import foo from \\"/node_modules/foo/index.js\\";"'
+  );
 });
 
 test("yet another (simplified) umd use case from package type-detect", async () => {
@@ -536,9 +683,21 @@ test("yet another (simplified) umd use case from package type-detect", async () 
     content:
       "(function(global,factory){module.exports=factory()})(this,function(){});"
   });
-  const app = express().use(esm({ nodeModulesRoot: "/node_modules" }));
+  const app = express();
+  app.use(esm("/", { nodeModulesRoot: "/node_modules" }));
   const r1 = await request(app).get("/app.js");
-  expect(r1.text).toMatchSnapshot();
+  expect(r1.text).toMatchInlineSnapshot(`
+    "const module = {
+      exports: {}
+    };
+    const exports = module.exports;
+
+    (function (global, factory) {
+      module.exports = factory();
+    })(this, function () {});
+
+    export default module.exports;"
+  `);
 });
 
 test("avoid early usage of imported bindings when not needed", async () => {
@@ -552,9 +711,13 @@ test("avoid early usage of imported bindings when not needed", async () => {
       content: "module.exports = 'y';"
     }
   );
-  const app = express().use(esm({ nodeModulesRoot: "/node_modules" }));
+  const app = express();
+  app.use(esm("/", { nodeModulesRoot: "/node_modules" }));
   const r1 = await request(app).get("/x.js");
-  expect(r1.text).toMatchSnapshot();
+  expect(r1.text).toMatchInlineSnapshot(`
+    "import y from \\"./y.js\\";
+    export default 'x';"
+  `);
 });
 
 test("variable declaration with more than one declarator", async () => {
@@ -572,20 +735,96 @@ test("variable declaration with more than one declarator", async () => {
       content: "module.exports = 't';"
     }
   );
-  const app = express().use(esm({ nodeModulesRoot: "/node_modules" }));
+  const app = express();
+  app.use(esm("/", { nodeModulesRoot: "/node_modules" }));
   const r1 = await request(app).get("/x.js");
-  expect(r1.text).toMatchSnapshot();
+  expect(r1.text).toMatchInlineSnapshot(`
+    "import t from \\"./t.js\\";
+    import y from \\"./y.js\\";"
+  `);
 });
 
-test("explicit user modules root", async () => {
-  // https://github.com/fpipita/esm-middleware/issues/4
-  fs.__setFiles({
-    path: "/client/app.js",
-    content: "export default 'app';"
+describe("root option", () => {
+  test("middleware mounted on path", async () => {
+    fs.__setFiles(
+      {
+        path: "/app/src/app.js",
+        content: 'import foo from "foo";'
+      },
+      {
+        path: "/app/node_modules/foo/package.json",
+        content: JSON.stringify({ module: "es/index.js" })
+      },
+      {
+        path: "/app/node_modules/foo/es/index.js",
+        content: "export default 'foo';"
+      }
+    );
+    const app = express();
+    app.use(
+      "/client",
+      esm("/app/src", { nodeModulesRoot: "/app/node_modules" })
+    );
+    const response = await request(app).get("/client/app.js");
+    expect(response.status).toEqual(200);
+    expect(response.text).toMatchInlineSnapshot(
+      '"import foo from \\"/node_modules/foo/es/index.js\\";"'
+    );
   });
-  const app = express().use(
-    esm({ nodeModulesRoot: "/node_modules", root: "/client" })
-  );
-  const r1 = await request(app).get("/app.js");
-  expect(r1.text).toMatchSnapshot();
+
+  test("middleware mounted on root", async () => {
+    fs.__setFiles(
+      {
+        path: "/app/src/app.js",
+        content: 'import foo from "foo";'
+      },
+      {
+        path: "/app/node_modules/foo/package.json",
+        content: JSON.stringify({ module: "es/index.js" })
+      },
+      {
+        path: "/app/node_modules/foo/es/index.js",
+        content: "export default 'foo';"
+      }
+    );
+    const app = express();
+    app.use(esm("/app/src", { nodeModulesRoot: "/app/node_modules" }));
+    const response = await request(app).get("/app.js");
+    expect(response.status).toEqual(200);
+    expect(response.text).toMatchInlineSnapshot(
+      '"import foo from \\"/node_modules/foo/es/index.js\\";"'
+    );
+  });
+
+  test("node_modules outside `root`", async () => {
+    fs.__setFiles({
+      path: "/app/node_modules/foo/dist/index.js",
+      content: "export default 'foo';"
+    });
+    const app = express();
+    app.use(esm("/app/src", { nodeModulesRoot: "/app/node_modules" }));
+    const res = await request(app).get("/node_modules/foo/dist/index.js");
+    expect(res.status).toEqual(200);
+    expect(res.text).toMatchInlineSnapshot("\"export default 'foo';\"");
+  });
+
+  test("middleware mounted on root, modules requested at `path` matching `root`", async () => {
+    fs.__setFiles(
+      {
+        path: "/app/client/app.js",
+        content: "import lodash from 'lodash';"
+      },
+      {
+        path: "/app/node_modules/lodash/index.js",
+        content: "export default 'lodash';"
+      }
+    );
+    const app = express();
+    app.use(esm("/app/client", { nodeModulesRoot: "/app/node_modules" }));
+    const res = await request(app).get("/client/app.js");
+    expect(res.status).toEqual(200);
+    expect(res.text).toMatchInlineSnapshot(
+      '"import lodash from \\"/node_modules/lodash/index.js\\";"'
+    );
+  });
 });

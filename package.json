@@ -27,8 +27,7 @@
   "dependencies": {
     "@babel/core": "^7.5.0",
     "@babel/types": "^7.5.0",
-    "babel-plugin-syntax-dynamic-import": "^6.18.0",
-    "mime-types": "^2.1.22"
+    "babel-plugin-syntax-dynamic-import": "^6.18.0"
   },
   "devDependencies": {
     "@types/jest": "^24.0.19",
@@ -45,7 +44,7 @@
   },
   "scripts": {
     "test": "jest",
-    "debug": "node --inspect-brk node_modules/.bin/jest --no-cache --runInBand",
+    "debug": "node --inspect-brk node_modules/.bin/jest --no-cache --runInBand --testTimeout=600000",
     "commit": "git-cz",
     "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s && git add -A",
     "preversion": "yarn test && eslint .",

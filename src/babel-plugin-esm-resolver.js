@@ -1,99 +1,14 @@
 const path = require("path");
-const fs = require("fs");
 const t = require("@babel/types");
+const { JS_FILE_PATTERN } = require("./constants");
+const { resolveModule } = require("./resolve-module");
 
 /**
  * Babel plugin handbook https://github.com/jamiebuilds/babel-handbook/blob/master/translations/en/plugin-handbook.md
  * ESTree AST reference https://github.com/babel/babylon/blob/master/ast/spec.md
  */
 
-const JS_FILE_PATTERN = /\.(js|mjs|json)$/;
-const MODULE_SPECIFIER_PATTERN = /^[./]/;
 const PATH_SEPARATOR_REPLACER = /[/\\]+/g;
-
-function joinRelativePath(...paths) {
-  const result = path.join(...paths);
-  if (path.isAbsolute(result) || MODULE_SPECIFIER_PATTERN.test(result)) {
-    return result;
-  }
-  return `.${path.sep}${result}`;
-}
-
-function resolveUserModule(source, currentModuleAbsolutePath) {
-  const cwd = path.dirname(currentModuleAbsolutePath);
-  const p = path.resolve(cwd, source);
-  if (!fs.existsSync(p)) {
-    if (!JS_FILE_PATTERN.test(p)) {
-      return resolveUserModule(source + ".js", currentModuleAbsolutePath);
-    }
-    return null;
-  }
-  const stat = fs.statSync(p);
-  if (stat.isFile()) {
-    return source;
-  }
-  /**
-   * if we get here, source is a directory, before to look
-   * for package.json, let's check whether a module with
-   * the same basename exists
-   */
-  return (
-    resolveUserModule(source + ".js", currentModuleAbsolutePath) ||
-    resolveUserModule(
-      joinRelativePath(source, "index.js"),
-      currentModuleAbsolutePath
-    )
-  );
-}
-
-function resolveNodeModuleFromPackageJson(dir) {
-  const p = path.resolve(dir, "package.json");
-  if (!fs.existsSync(p)) {
-    return null;
-  }
-  const pj = JSON.parse(fs.readFileSync(p));
-  const m = pj.module || pj["jsnext:main"] || pj.main;
-  if (!m) {
-    return null;
-  }
-  const finalPath = path.resolve(dir, m);
-  if (fs.existsSync(finalPath)) {
-    return finalPath;
-  }
-  if (finalPath.endsWith(".js")) {
-    return null;
-  }
-  return finalPath + ".js";
-}
-
-function resolveNodeModule(source, nodeModulesRoot) {
-  const p = path.resolve(nodeModulesRoot, source);
-  if (!fs.existsSync(p)) {
-    if (!JS_FILE_PATTERN.test(p)) {
-      return resolveNodeModule(source + ".js", nodeModulesRoot);
-    }
-    return null;
-  }
-  const stat = fs.statSync(p);
-  if (stat.isDirectory()) {
-    return (
-      resolveNodeModuleFromPackageJson(p) ||
-      resolveNodeModule(path.join(source, "index.js"), nodeModulesRoot)
-    );
-  }
-  return p;
-}
-
-function resolveModule(source, nodeModulesRoot, currentModuleAbsolutePath) {
-  if (MODULE_SPECIFIER_PATTERN.test(source)) {
-    return resolveUserModule(source, currentModuleAbsolutePath);
-  }
-  const result = resolveNodeModule(source, nodeModulesRoot);
-  if (result !== null) {
-    return result.replace(process.cwd(), "");
-  }
-  return result;
-}
 
 /**
  * @param {babel.types.Identifier} e
@@ -219,7 +134,7 @@ function addExportsVariableDeclarationIfNotPresent(p) {
   program.unshiftContainer("body", modvadec);
 }
 
-function esmResolverPluginFactory({
+function babelPluginEsmResolverFactory({
   currentModuleAbsolutePath,
   nodeModulesRoot = path.resolve("node_modules"),
   removeUnresolved = true
@@ -369,7 +284,7 @@ function esmResolverPluginFactory({
           const source = resolveModule(
             p.node.source.value,
             nodeModulesRoot,
-            currentModuleAbsolutePath
+            path.dirname(currentModuleAbsolutePath)
           );
           if (source === null || !JS_FILE_PATTERN.test(source)) {
             if (removeUnresolved) {
@@ -417,4 +332,4 @@ function esmResolverPluginFactory({
   };
 }
 
-module.exports = esmResolverPluginFactory;
+module.exports = babelPluginEsmResolverFactory;
