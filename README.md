@@ -229,7 +229,7 @@ Only a couple guidelines to follow for now:
 - [x] build: add conventional changelog
 - [ ] feat: support cjs named exports
 - [ ] feat: preserve original code formatting where possible
-- [ ] build: switch to prettier-eslint
+- [x] build: switch to prettier-eslint
 - [ ] feat: process script tags content
 - [ ] docs: add typings
 - [ ] chore: turn this todo list into GitHub issues
