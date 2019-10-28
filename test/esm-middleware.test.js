@@ -744,6 +744,20 @@ test("variable declaration with more than one declarator", async () => {
   `);
 });
 
+describe("removeUnresolved option", () => {
+  test("prevents unresolved/unsupported modules from being removed when set to `false`", async () => {
+    fs.__setFiles({
+      path: "/my-app/src/index.js",
+      content: "import './bootstrap.css'"
+    });
+    const app = express();
+    app.use(esm("/my-app/src", { removeUnresolved: false }));
+    const res = await request(app).get("/index.js");
+    expect(res.status).toEqual(200);
+    expect(res.text).toMatchInlineSnapshot("\"import './bootstrap.css';\"");
+  });
+});
+
 describe("root option", () => {
   test("middleware mounted on path", async () => {
     fs.__setFiles(
