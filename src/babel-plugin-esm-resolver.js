@@ -221,7 +221,8 @@ function addExportsVariableDeclarationIfNotPresent(p) {
 
 function esmResolverPluginFactory({
   currentModuleAbsolutePath,
-  nodeModulesRoot = path.resolve("node_modules")
+  nodeModulesRoot = path.resolve("node_modules"),
+  removeUnresolved = true
 } = {}) {
   return function() {
     return {
@@ -371,7 +372,9 @@ function esmResolverPluginFactory({
             currentModuleAbsolutePath
           );
           if (source === null || !JS_FILE_PATTERN.test(source)) {
-            p.remove();
+            if (removeUnresolved) {
+              p.remove();
+            }
           } else {
             p.node.source.value = source.replace(PATH_SEPARATOR_REPLACER, "/");
           }

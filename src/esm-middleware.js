@@ -7,7 +7,8 @@ const esmResolverPlugin = require("./babel-plugin-esm-resolver.js");
 function esmMiddlewareFactory({
   cache = true,
   root = path.resolve("."),
-  nodeModulesRoot = path.resolve("node_modules")
+  nodeModulesRoot = path.resolve("node_modules"),
+  removeUnresolved = true
 } = {}) {
   const esmCache = new Map();
 
@@ -41,7 +42,8 @@ function esmMiddlewareFactory({
             require("babel-plugin-syntax-dynamic-import"),
             esmResolverPlugin({
               nodeModulesRoot,
-              currentModuleAbsolutePath: absolutePath
+              currentModuleAbsolutePath: absolutePath,
+              removeUnresolved
             })
           ]
         });

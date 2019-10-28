@@ -82,12 +82,13 @@ and point your browser to `http://localhost:3000/`.
 
 `esm-middleware` exports a factory function which takes a single options object argument:
 
-| `{`               | Type      | Default value                  | Description                                                     |
-| :---------------- | :-------- | :----------------------------- | :-------------------------------------------------------------- |
-| `cache`           | `Boolean` | `true`                         | if `true`, modules are **cached**.                              |
-| `root`            | `String`  | `path.resolve(".")`            | it is an absolute path to the folder containing static files.   |
-| `nodeModulesRoot` | `String`  | `path.resolve("node_modules")` | it is an absolute path to the folder containing `npm` packages. |
-| `}`               |           |                                |
+| `{`                | Type      | Default value                  | Description                                                     |
+| :----------------- | :-------- | :----------------------------- | :-------------------------------------------------------------- |
+| `cache`            | `Boolean` | `true`                         | if `true`, modules are **cached**.                              |
+| `root`             | `String`  | `path.resolve(".")`            | it is an absolute path to the folder containing static files.   |
+| `nodeModulesRoot`  | `String`  | `path.resolve("node_modules")` | it is an absolute path to the folder containing `npm` packages. |
+| `removeUnresolved` | `Boolean` | `true`                         | if `true`, modules that couldn't be resolved are removed.       |
+| `}`                |           |                                |
 
 Furthermore, the middleware implements a tiny web API which controls whether a certain module should be skipped from processing.
 
