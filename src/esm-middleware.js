@@ -29,7 +29,7 @@ const { JS_FILE_PATTERN } = require("./constants");
 
 /**
  *
- * @param {string=} root optional, combined with req.url,
+ * @param {EsmMiddlewareOptions=} root optional, combined with req.url,
  * determines the file to serve. Defaults to the current
  * working directory.
  * @param {EsmMiddlewareConfigObject=} options
