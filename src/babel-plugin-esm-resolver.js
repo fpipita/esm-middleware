@@ -134,11 +134,12 @@ function addExportsVariableDeclarationIfNotPresent(p) {
   program.unshiftContainer("body", modvadec);
 }
 
-function babelPluginEsmResolverFactory({
-  currentModuleAbsolutePath,
-  nodeModulesRoot = path.resolve("node_modules"),
-  removeUnresolved = true
-} = {}) {
+/**
+ * @param {string} currentModuleAbsolutePath
+ * @param {import("./esm-middleware").EsmMiddlewareConfigObject} config
+ * @returns {babel.PluginItem}
+ */
+function babelPluginEsmResolverFactory(currentModuleAbsolutePath, config) {
   return function() {
     return {
       visitor: {
@@ -283,11 +284,11 @@ function babelPluginEsmResolverFactory({
           }
           const source = resolveModule(
             p.node.source.value,
-            nodeModulesRoot,
-            path.dirname(currentModuleAbsolutePath)
+            path.dirname(currentModuleAbsolutePath),
+            config
           );
           if (source === null || !JS_FILE_PATTERN.test(source)) {
-            if (removeUnresolved) {
+            if (config.removeUnresolved) {
               p.remove();
             }
           } else {

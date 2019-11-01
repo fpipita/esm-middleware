@@ -74,7 +74,8 @@ function resolveNodeModuleFromPackageJson(dir) {
 /**
  * @param {string} source
  * @param {string} nodeModulesRoot
- * @returns {string | null}
+ * @returns {string | null} absolute path to a local script
+ * if source could be resolved or null.
  */
 function resolveInvalidModuleSpecifier(source, nodeModulesRoot) {
   const p = path.resolve(nodeModulesRoot, source);
@@ -101,25 +102,21 @@ function resolveInvalidModuleSpecifier(source, nodeModulesRoot) {
  * Resolves `source` to a valid esm import specifier.
  *
  * @param {string} source input module specifier.
- * @param {string} nodeModulesRoot absolute path to the directory
- * hosting node_modules.
  * @param {string} currentModuleDir absolute path to the
  * module's directory where `source` appears.
+ * @param {import("./esm-middleware").EsmMiddlewareConfigObject} config
  * @returns {string | null} the resolved specifier or null
  * if no valid specifiers could be located.
  */
-function resolveModule(source, nodeModulesRoot, currentModuleDir) {
+function resolveModule(source, currentModuleDir, config) {
   if (MODULE_SPECIFIER_PATTERN.test(source)) {
     return resolveValidModuleSpecifier(source, currentModuleDir);
   }
-  const result = resolveInvalidModuleSpecifier(source, nodeModulesRoot);
-  if (result !== null) {
-    return path.join(
-      path.sep,
-      result.replace(path.dirname(nodeModulesRoot), "")
-    );
+  const p = resolveInvalidModuleSpecifier(source, config.nodeModulesRoot);
+  if (p !== null) {
+    return p.replace(config.nodeModulesRoot, config.nodeModulesPublicPath);
   }
-  return result;
+  return null;
 }
 
 module.exports = {

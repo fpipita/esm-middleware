@@ -744,7 +744,7 @@ test("variable declaration with more than one declarator", async () => {
   `);
 });
 
-describe("removeUnresolved option", () => {
+describe("config.removeUnresolved", () => {
   test("prevents unresolved/unsupported modules from being removed when set to `false`", async () => {
     fs.__setFiles({
       path: "/my-app/src/index.js",
@@ -758,35 +758,8 @@ describe("removeUnresolved option", () => {
   });
 });
 
-describe("root option", () => {
-  test("middleware mounted on path", async () => {
-    fs.__setFiles(
-      {
-        path: "/app/src/app.js",
-        content: 'import foo from "foo";'
-      },
-      {
-        path: "/app/node_modules/foo/package.json",
-        content: JSON.stringify({ module: "es/index.js" })
-      },
-      {
-        path: "/app/node_modules/foo/es/index.js",
-        content: "export default 'foo';"
-      }
-    );
-    const app = express();
-    app.use(
-      "/client",
-      esm("/app/src", { nodeModulesRoot: "/app/node_modules" })
-    );
-    const response = await request(app).get("/client/app.js");
-    expect(response.status).toEqual(200);
-    expect(response.text).toMatchInlineSnapshot(
-      '"import foo from \\"/node_modules/foo/es/index.js\\";"'
-    );
-  });
-
-  test("middleware mounted on root", async () => {
+describe("config.root", () => {
+  test("requested url relative `root` path", async () => {
     fs.__setFiles(
       {
         path: "/app/src/app.js",
@@ -822,23 +795,66 @@ describe("root option", () => {
     expect(res.text).toMatchInlineSnapshot("\"export default 'foo';\"");
   });
 
-  test("middleware mounted on root, modules requested at `path` matching `root`", async () => {
+  test("requested url not an allowed absolute path", async () => {
     fs.__setFiles(
       {
-        path: "/app/client/app.js",
-        content: "import lodash from 'lodash';"
+        path: "/app/src/app.js",
+        content: "export default 'foo';"
       },
       {
-        path: "/app/node_modules/lodash/index.js",
-        content: "export default 'lodash';"
+        path: "/bar.js",
+        content: "export default 'bar';"
       }
     );
     const app = express();
-    app.use(esm("/app/client", { nodeModulesRoot: "/app/node_modules" }));
-    const res = await request(app).get("/client/app.js");
+    app.use(esm("/app/src", { nodeModulesRoot: "/app/node_modules" }));
+    const res = await request(app).get("/bar.js");
+    expect(res.status).toEqual(404);
+  });
+});
+
+describe("config.nodeModulesPublicPath", () => {
+  test("custom public path access for node_modules", async () => {
+    fs.__setFiles(
+      {
+        path: "/home/user/app/src/app.js",
+        content: "import bar from 'bar'"
+      },
+      {
+        path: "/home/user/app/node_modules/bar/index.js",
+        content: "export default 'bar';"
+      }
+    );
+    const app = express();
+    app.use(
+      esm("/home/user/app/src", {
+        nodeModulesRoot: "/home/user/app/node_modules",
+        nodeModulesPublicPath: "/node_modules"
+      })
+    );
+    const res = await request(app).get("/app.js");
     expect(res.status).toEqual(200);
     expect(res.text).toMatchInlineSnapshot(
-      '"import lodash from \\"/node_modules/lodash/index.js\\";"'
+      '"import bar from \\"/node_modules/bar/index.js\\";"'
     );
+  });
+});
+
+describe("config.rootPublicPath", () => {
+  test("custom public patch access for source files", async () => {
+    fs.__setFiles({
+      path: "/app/src/app.js",
+      content: "export default 'foo';"
+    });
+    const app = express();
+    app.use(
+      esm("/app/src", {
+        nodeModulesRoot: "/app/node_modules",
+        rootPublicPath: "/app/src"
+      })
+    );
+    const res = await request(app).get("/app/src/app.js");
+    expect(res.status).toEqual(200);
+    expect(res.text).toMatchInlineSnapshot("\"export default 'foo';\"");
   });
 });

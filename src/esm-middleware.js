@@ -14,13 +14,17 @@ const { JS_FILE_PATTERN } = require("./constants");
 
 /**
  * @typedef {Object} EsmMiddlewareConfigObject
- * @property {string=} root optional, absolute path where user
- * code is located. Defaults to the current working directory.
- * @property {string=} nodeModulesRoot optional, absolute path
- * where npm packages are located. Defaults to `node_modules`
- * resolved relative to the current working directory.
+ * @property {string=} root absolute local path where user
+ * code is located. Defaults to `process.cwd()`.
+ * @property {string=} rootPublicPath defines the endpoint at which
+ * source code will be made available. Defaults to `/`.
+ * @property {string=} nodeModulesRoot absolute local path
+ * pointing to the directory where npm packages are located.
+ * Defaults to `${process.cwd()}/node_modules`.
+ * @property {string=} nodeModulesPublicPath defines the endpoint
+ * at which node_modules will be made available. Defaults to `/node_modules`.
  * @property {boolean=} removeUnresolved if `true`, modules that
- * couldn't be resolved are removed.
+ * couldn't be resolved are removed. Defaults to `false`.
  */
 
 /**
@@ -35,20 +39,23 @@ const { JS_FILE_PATTERN } = require("./constants");
  * @param {EsmMiddlewareConfigObject=} options
  * @returns {import("express").Handler}
  */
-function esmMiddlewareFactory(root = path.resolve(), options = {}) {
+function esmMiddlewareFactory(root = path.resolve(), options) {
   if (typeof root !== "string") {
     options = /** @type {EsmMiddlewareConfigObject} */ (root);
     root = options.root;
   }
-  if (!root || !path.isAbsolute(root)) {
-    throw new TypeError("root: absolute path expected");
-  }
   /** @type {EsmMiddlewareConfigObject} */
   const finalOptions = {
+    root,
+    rootPublicPath: "/",
     nodeModulesRoot: path.resolve("node_modules"),
+    nodeModulesPublicPath: "/node_modules",
     removeUnresolved: true,
     ...options
   };
+  if (!finalOptions.root || !path.isAbsolute(finalOptions.root)) {
+    throw new TypeError("root: absolute path expected");
+  }
   if (
     !finalOptions.nodeModulesRoot ||
     !path.isAbsolute(finalOptions.nodeModulesRoot)
@@ -70,11 +77,7 @@ function esmMiddlewareFactory(root = path.resolve(), options = {}) {
     const result = babel.transformSync(content, {
       plugins: [
         syntaxDynamicImportPlugin,
-        esmResolverPlugin({
-          nodeModulesRoot: finalOptions.nodeModulesRoot,
-          currentModuleAbsolutePath: filePath,
-          removeUnresolved: finalOptions.removeUnresolved
-        })
+        esmResolverPlugin(filePath, finalOptions)
       ]
     });
     if (result && result.code) {
@@ -110,22 +113,17 @@ function esmMiddlewareFactory(root = path.resolve(), options = {}) {
    * @param {string} url
    * @returns {string}
    */
-  function translateToLocalPath(url) {
-    if (
-      !finalOptions.nodeModulesRoot ||
-      !path.isAbsolute(finalOptions.nodeModulesRoot)
-    ) {
-      throw new TypeError("nodeModulesRoot: absolute path expected");
+  function mapUrlToLocalPath(url) {
+    if (url.startsWith(finalOptions.nodeModulesPublicPath)) {
+      return path.join(
+        finalOptions.nodeModulesRoot,
+        url.replace(finalOptions.nodeModulesPublicPath, "")
+      );
     }
-    const nodeModulesRootBasename = path.basename(finalOptions.nodeModulesRoot);
-    if (url.slice(1).startsWith(nodeModulesRootBasename)) {
-      return path.join(path.dirname(finalOptions.nodeModulesRoot), url);
-    }
-    const rootBasename = path.basename(root);
-    if (url.slice(1).startsWith(rootBasename)) {
-      return path.join(path.dirname(root), url);
-    }
-    return path.join(root, url);
+    return path.join(
+      finalOptions.root,
+      url.replace(finalOptions.rootPublicPath, "")
+    );
   }
 
   /** @type {import("express").Handler} */
@@ -133,7 +131,7 @@ function esmMiddlewareFactory(root = path.resolve(), options = {}) {
     if (req.query.nomodule || !JS_FILE_PATTERN.test(req.url)) {
       return next();
     }
-    const filePath = translateToLocalPath(req.url);
+    const filePath = mapUrlToLocalPath(req.url);
     if (!fs.existsSync(filePath)) {
       return next();
     }
