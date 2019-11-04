@@ -1,3 +1,19 @@
+# [1.4.0](https://github.com/fpipita/esm-middleware/compare/v1.3.0...v1.4.0) (2019-11-04)
+
+### Features
+
+- enable local to public paths customization ([df41e88](https://github.com/fpipita/esm-middleware/commit/df41e881dc0527957fa2db4b115a73aee4cb1f8a))
+- removeUnresolved - Allow not removing unresolved modules ([#7](https://github.com/fpipita/esm-middleware/issues/7)) ([7d507a8](https://github.com/fpipita/esm-middleware/commit/7d507a8cc70b8113cfbcf72805f68783929c88cb))
+
+### Performance Improvements
+
+- cache esm modules by content hash ([7c96198](https://github.com/fpipita/esm-middleware/commit/7c96198298dac9fd5a546be4a7fcd96fcb44ae03))
+
+### BREAKING CHANGES
+
+- Requesting a module located outside the `root` and `nodeModulesRoot` absolute paths
+  is not supported anymore. This behavior was removed because it represented a security issue.
+
 # [1.3.0](https://github.com/fpipita/esm-middleware/compare/v1.2.6...v1.3.0) (2019-10-27)
 
 ### Bug Fixes
