@@ -1,3 +1,9 @@
+## [1.4.3](https://github.com/fpipita/esm-middleware/compare/v1.4.2...v1.4.3) (2019-11-08)
+
+### Bug Fixes
+
+- handle module.exports = foo part of a generic parent expression ([90af3cc](https://github.com/fpipita/esm-middleware/commit/90af3cc3fcb433147f706e01f6154d06bde22011))
+
 ## [1.4.2](https://github.com/fpipita/esm-middleware/compare/v1.4.1...v1.4.2) (2019-11-08)
 
 ### Bug Fixes
