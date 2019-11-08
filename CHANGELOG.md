@@ -1,3 +1,9 @@
+## [1.4.4](https://github.com/fpipita/esm-middleware/compare/v1.4.3...v1.4.4) (2019-11-08)
+
+### Features
+
+- remove duplicate variable declarators ([49640ed](https://github.com/fpipita/esm-middleware/commit/49640ed417cbd9e9fdb60d0a2232f46bfbf6dd2f))
+
 ## [1.4.3](https://github.com/fpipita/esm-middleware/compare/v1.4.2...v1.4.3) (2019-11-08)
 
 ### Bug Fixes
