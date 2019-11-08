@@ -1,6 +1,6 @@
 {
   "name": "@fpipita/esm-middleware",
-  "version": "1.4.1",
+  "version": "1.4.2",
   "description": "Serve ES modules from your node_modules folder.",
   "main": "index.js",
   "repository": {

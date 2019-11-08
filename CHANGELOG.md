@@ -1,3 +1,9 @@
+## [1.4.2](https://github.com/fpipita/esm-middleware/compare/v1.4.1...v1.4.2) (2019-11-08)
+
+### Bug Fixes
+
+- handle module.exports = foo right side of parent assignment expression ([e0465bb](https://github.com/fpipita/esm-middleware/commit/e0465bba9a4fc0654d553908e154cd189ba12d46))
+
 ## [1.4.1](https://github.com/fpipita/esm-middleware/compare/v1.4.0...v1.4.1) (2019-11-08)
 
 ### Bug Fixes
