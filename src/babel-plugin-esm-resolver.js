@@ -210,32 +210,41 @@ function babelPluginEsmResolverFactory(currentModuleAbsolutePath, config) {
             ) {
               return;
             }
-            if (p.parentPath.isAssignmentExpression()) {
+            if (
+              p.parentPath.isExpressionStatement() &&
+              p.parentPath.get("expression") === p
+            ) {
               /**
-               * module.exports assignment expression's is the right node of an
-               * assignment expression itself, e.g.
+               * simple case where assignment to module.exports happens on a standalone
+               * assignment expression, e.g.
                *
-               *    var assert = foo = bar = module.exports = ok;
+               *   module.exports = foo;
                *
-               * we rewrite it as:
+               * we simply rewrite it as:
                *
-               *    export default ok;
-               *    var assert = foo = bar = ok;
+               *   export default foo;
                */
-              const right = p.get("right");
-              const edd = t.exportDefaultDeclaration(right.node);
-              p.find(pp => pp.isProgram()).unshiftContainer("body", edd);
-              p.replaceWith(right.node);
+              p.replaceWithMultiple(
+                t.exportDefaultDeclaration(p.get("right").node)
+              );
               return;
             }
+
             /**
-             * simple case where a standalone assignment expression happens
+             * module.exports assignment expression's is the right node of an
+             * assignment expression itself, e.g.
              *
-             *   module.exports = foo;
+             *    var assert = foo = bar = module.exports = ok;
+             *
+             * we rewrite it as:
+             *
+             *    export default ok;
+             *    var assert = foo = bar = ok;
              */
-            p.replaceWithMultiple(
-              t.exportDefaultDeclaration(p.get("right").node)
-            );
+            const right = p.get("right");
+            const edd = t.exportDefaultDeclaration(right.node);
+            p.find(pp => pp.isProgram()).unshiftContainer("body", edd);
+            p.replaceWith(right.node);
           }
         },
         /**
