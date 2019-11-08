@@ -796,6 +796,29 @@ test("module.exports = foo is the right node of an assignment expression itself"
   `);
 });
 
+test("duplicate variable declarators (test case from jszip package)", async () => {
+  fs.__setFiles(
+    {
+      path: "/load.js",
+      content: `
+        var utils = require("./utils");
+        var utils = require("./utils");
+      `
+    },
+    {
+      path: "/utils.js",
+      content: "module.exports = 'utils';"
+    }
+  );
+
+  const app = express();
+  app.use(esm("/"));
+  const res = await request(app).get("/load.js");
+  expect(res.text).toMatchInlineSnapshot(
+    '"import utils from \\"./utils.js\\";"'
+  );
+});
+
 describe("config.removeUnresolved", () => {
   test("prevents unresolved/unsupported modules from being removed when set to `false`", async () => {
     fs.__setFiles({

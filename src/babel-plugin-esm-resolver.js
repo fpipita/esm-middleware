@@ -153,6 +153,9 @@ function babelPluginEsmResolverFactory(currentModuleAbsolutePath, config) {
     return {
       visitor: {
         Program: {
+          /**
+           * @param {babel.NodePath<babel.types.Program>} p
+           */
           exit(p) {
             const evd = findVariableDeclaration(p, "module");
             if (
@@ -169,6 +172,9 @@ function babelPluginEsmResolverFactory(currentModuleAbsolutePath, config) {
             }
           }
         },
+        /**
+         * @param {babel.NodePath<babel.types.Identifier>} p
+         */
         Identifier(p) {
           const program = p.findParent(t => t.isProgram());
           const ae = findExportedBindings(p);
@@ -194,7 +200,7 @@ function babelPluginEsmResolverFactory(currentModuleAbsolutePath, config) {
         },
         AssignmentExpression: {
           /**
-           * @param {babel.NodePath} p
+           * @param {babel.NodePath<babel.types.AssignmentExpression>} p
            */
           exit(p) {
             if (p.scope.parent !== null) {
@@ -248,7 +254,7 @@ function babelPluginEsmResolverFactory(currentModuleAbsolutePath, config) {
           }
         },
         /**
-         * @param {babel.NodePath} p
+         * @param {babel.NodePath<babel.types.CallExpression>} p
          */
         CallExpression(p) {
           if (!p.get("callee").isIdentifier({ name: "require" })) {
@@ -322,6 +328,9 @@ function babelPluginEsmResolverFactory(currentModuleAbsolutePath, config) {
           p.replaceWith(binding);
           p.find(p => p.isProgram()).unshiftContainer("body", idec);
         },
+        /**
+         * @param {babel.NodePath<babel.types.ImportDeclaration & babel.types.ExportDeclaration>} p
+         */
         ModuleDeclaration(p) {
           if (!p.node.source) {
             return;
@@ -339,6 +348,9 @@ function babelPluginEsmResolverFactory(currentModuleAbsolutePath, config) {
             p.node.source.value = source.replace(PATH_SEPARATOR_REPLACER, "/");
           }
         },
+        /**
+         * @param {babel.NodePath<babel.types.MemberExpression>} p
+         */
         MemberExpression(p) {
           if (
             p.get("object").isIdentifier({ name: "module" }) &&
@@ -371,6 +383,40 @@ function babelPluginEsmResolverFactory(currentModuleAbsolutePath, config) {
           if (p.get("object").isIdentifier({ name: "exports" })) {
             addExportsVariableDeclarationIfNotPresent(p);
           }
+        },
+        /**
+         * @param {babel.NodePath<babel.types.VariableDeclarator>} p
+         */
+        VariableDeclarator(p) {
+          /**
+           * here we are looking for something like:
+           *
+           *    var x = require("x");
+           *    var x = require("x");
+           *
+           * that is, distinct variable declarators redeclaring the
+           * same identifier
+           */
+          if (p.node.id.type !== "Identifier") {
+            return;
+          }
+          const init = p.get("init");
+          if (
+            !init.isCallExpression() ||
+            !init.get("callee").isIdentifier({ name: "require" })
+          ) {
+            return;
+          }
+          const binding = p.scope.getBinding(p.node.id.name);
+          if (!binding || binding.constant) {
+            return;
+          }
+          /**
+           * we remove all the duplicates
+           */
+          binding.constantViolations
+            .filter(p => p.isVariableDeclarator())
+            .forEach(p => p.remove());
         }
       }
     };
