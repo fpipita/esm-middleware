@@ -1,3 +1,9 @@
+## [1.4.1](https://github.com/fpipita/esm-middleware/compare/v1.4.0...v1.4.1) (2019-11-08)
+
+### Bug Fixes
+
+- handle foo(exports) as a top level statement ([fadc539](https://github.com/fpipita/esm-middleware/commit/fadc539b5171017e255ef43d371027884497bdb8))
+
 # [1.4.0](https://github.com/fpipita/esm-middleware/compare/v1.3.0...v1.4.0) (2019-11-04)
 
 ### Features
