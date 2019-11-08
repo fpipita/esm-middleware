@@ -766,6 +766,21 @@ test("call expression involving `exports` as one of its arguments happening as a
   `);
 });
 
+test("module.exports = foo is the right node of an assignment expression itself (use case from package assert)", async () => {
+  fs.__setFiles({
+    path: "/assert.js",
+    content: "var assert = foo = bar = module.exports = ok;"
+  });
+
+  const app = express();
+  app.use(esm("/"));
+  const res = await request(app).get("/assert.js");
+  expect(res.text).toMatchInlineSnapshot(`
+    "export default ok;
+    var assert = foo = bar = ok;"
+  `);
+});
+
 describe("config.removeUnresolved", () => {
   test("prevents unresolved/unsupported modules from being removed when set to `false`", async () => {
     fs.__setFiles({

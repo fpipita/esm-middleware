@@ -193,11 +193,14 @@ function babelPluginEsmResolverFactory(currentModuleAbsolutePath, config) {
           }
         },
         AssignmentExpression: {
+          /**
+           * @param {babel.NodePath} p
+           */
           exit(p) {
-            const left = p.get("left");
             if (p.scope.parent !== null) {
               return;
             }
+            const left = p.get("left");
             if (!left.isMemberExpression()) {
               return;
             }
@@ -207,6 +210,29 @@ function babelPluginEsmResolverFactory(currentModuleAbsolutePath, config) {
             ) {
               return;
             }
+            if (p.parentPath.isAssignmentExpression()) {
+              /**
+               * module.exports assignment expression's is the right node of an
+               * assignment expression itself, e.g.
+               *
+               *    var assert = foo = bar = module.exports = ok;
+               *
+               * we rewrite it as:
+               *
+               *    export default ok;
+               *    var assert = foo = bar = ok;
+               */
+              const right = p.get("right");
+              const edd = t.exportDefaultDeclaration(right.node);
+              p.find(pp => pp.isProgram()).unshiftContainer("body", edd);
+              p.replaceWith(right.node);
+              return;
+            }
+            /**
+             * simple case where a standalone assignment expression happens
+             *
+             *   module.exports = foo;
+             */
             p.replaceWithMultiple(
               t.exportDefaultDeclaration(p.get("right").node)
             );
