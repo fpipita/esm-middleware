@@ -63,6 +63,15 @@ function findExportedBindings(p) {
     return [];
   }
   const pfe = p.findParent(t => t.isFunctionExpression());
+  if (!pfe) {
+    /**
+     * the call expression involving `exports` as one of its arguments
+     * happens as a top level statement, e.g.
+     *
+     * foo(exports);
+     */
+    return [];
+  }
   const calleePosition = pfe.get("params").findIndex(p => {
     return p.isIdentifier() && p.node.name === callee.node.name;
   });

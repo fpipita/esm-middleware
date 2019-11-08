@@ -744,6 +744,28 @@ test("variable declaration with more than one declarator", async () => {
   `);
 });
 
+test("call expression involving `exports` as one of its arguments happening as a top level statement (test case from safe-buffer package)", async () => {
+  fs.__setFiles({
+    path: "/index.js",
+    content: `
+      copyProps(buffer, exports)
+      exports.Buffer = SafeBuffer
+    `
+  });
+  const app = express();
+  app.use(esm("/"));
+  const res = await request(app).get("/index.js");
+  expect(res.text).toMatchInlineSnapshot(`
+    "const module = {
+      exports: {}
+    };
+    const exports = module.exports;
+    copyProps(buffer, exports);
+    exports.Buffer = SafeBuffer;
+    export default module.exports;"
+  `);
+});
+
 describe("config.removeUnresolved", () => {
   test("prevents unresolved/unsupported modules from being removed when set to `false`", async () => {
     fs.__setFiles({
