@@ -2,8 +2,6 @@ const crypto = require("crypto");
 const babel = require("@babel/core");
 const path = require("path");
 const fs = require("fs");
-const esmResolverPlugin = require("./babel-plugin-esm-resolver.js");
-const syntaxDynamicImportPlugin = require("babel-plugin-syntax-dynamic-import");
 const { JS_FILE_PATTERN } = require("./constants");
 
 /**
@@ -76,8 +74,14 @@ function esmMiddlewareFactory(root = path.resolve(), options) {
     }
     const result = babel.transformSync(content, {
       plugins: [
-        syntaxDynamicImportPlugin,
-        esmResolverPlugin(filePath, finalOptions)
+        require("babel-plugin-syntax-dynamic-import"),
+        [
+          require("./babel-plugin-esm-resolver"),
+          {
+            currentModuleAbsolutePath: filePath,
+            config: finalOptions
+          }
+        ]
       ]
     });
     if (result && result.code) {

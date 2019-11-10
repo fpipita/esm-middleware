@@ -1,4 +1,4 @@
-const path = require("path");
+const ospath = require("path");
 const t = require("@babel/types");
 const { JS_FILE_PATTERN } = require("./constants");
 const { resolveModule } = require("./resolve-module");
@@ -43,8 +43,8 @@ function toAssignmentExpressions(e) {
 
 /**
  *
- * @param {babel.types.Identifier} p
- * @returns {Array.<babel.types.AssignmentExpression>} list of all assignment expressions like
+ * @param {babel.NodePath<babel.types.Identifier>} p
+ * @returns {babel.NodePath<babel.types.AssignmentExpression>[]} list of all assignment expressions like
  *  e.foo = 'bar' where `e` is a reference to the exports object.
  */
 function findExportedBindings(p) {
@@ -144,283 +144,264 @@ function addExportsVariableDeclarationIfNotPresent(p) {
 }
 
 /**
- * @param {string} currentModuleAbsolutePath
- * @param {import("./esm-middleware").EsmMiddlewareConfigObject} config
- * @returns {babel.PluginItem}
+ * @typedef {Object} BabelPluginEsmResolverOptions
+ * @property {string} currentModuleAbsolutePath
+ * @property {import("./esm-middleware").EsmMiddlewareConfigObject} config
  */
-function babelPluginEsmResolverFactory(currentModuleAbsolutePath, config) {
-  return function() {
-    return {
-      visitor: {
-        Program: {
-          /**
-           * @param {babel.NodePath<babel.types.Program>} p
-           */
-          exit(p) {
-            const evd = findVariableDeclaration(p, "module");
-            if (
-              evd &&
-              !p.get("body").find(p => p.isExportDefaultDeclaration())
-            ) {
-              const edd = t.exportDefaultDeclaration(
-                t.memberExpression(
-                  t.identifier("module"),
-                  t.identifier("exports")
-                )
-              );
-              p.pushContainer("body", edd);
-            }
-          }
-        },
-        /**
-         * @param {babel.NodePath<babel.types.Identifier>} p
-         */
-        Identifier(p) {
-          const program = p.findParent(t => t.isProgram());
-          const ae = findExportedBindings(p);
-          for (let expr of ae) {
-            // we make sure the exports binding is available on the root scope
-            addExportsVariableDeclarationIfNotPresent(p);
-            // turns exports.foo = 'bar' into export const foo = exports.foo;
-            const e = t.identifier("exports");
-            const pr = t.identifier(expr.get("left").get("property").node.name);
-            const me = t.memberExpression(e, pr);
-            if (pr.name === "default") {
-              // add export default declaration if the named export's name is `default`
-              const edd = t.exportDefaultDeclaration(me);
-              program.pushContainer("body", edd);
-              continue;
-            }
-            const vd = t.variableDeclarator(pr, me);
-            const vad = t.variableDeclaration("const", [vd]);
-            const es = t.exportSpecifier(pr, pr);
-            const end = t.exportNamedDeclaration(vad, [es]);
-            program.pushContainer("body", end);
-          }
-        },
-        AssignmentExpression: {
-          /**
-           * @param {babel.NodePath<babel.types.AssignmentExpression>} p
-           */
-          exit(p) {
-            if (p.scope.parent !== null) {
-              return;
-            }
-            const left = p.get("left");
-            if (!left.isMemberExpression()) {
-              return;
-            }
-            if (
-              !left.get("object").isIdentifier({ name: "module" }) ||
-              !left.get("property").isIdentifier({ name: "exports" })
-            ) {
-              return;
-            }
-            if (
-              p.parentPath.isExpressionStatement() &&
-              p.parentPath.get("expression") === p
-            ) {
-              /**
-               * simple case where assignment to module.exports happens on a standalone
-               * assignment expression, e.g.
-               *
-               *   module.exports = foo;
-               *
-               * we simply rewrite it as:
-               *
-               *   export default foo;
-               */
-              p.replaceWithMultiple(
-                t.exportDefaultDeclaration(p.get("right").node)
-              );
-              return;
-            }
 
-            /**
-             * module.exports assignment expression's is the right node of an
-             * assignment expression itself, e.g.
-             *
-             *    var assert = foo = bar = module.exports = ok;
-             *
-             * we rewrite it as:
-             *
-             *    export default ok;
-             *    var assert = foo = bar = ok;
-             */
-            const right = p.get("right");
-            const edd = t.exportDefaultDeclaration(right.node);
-            p.find(pp => pp.isProgram()).unshiftContainer("body", edd);
-            p.replaceWith(right.node);
-          }
-        },
-        /**
-         * @param {babel.NodePath<babel.types.CallExpression>} p
-         */
-        CallExpression(p) {
-          if (!p.get("callee").isIdentifier({ name: "require" })) {
-            return;
-          }
-          if (p.parentPath.isVariableDeclarator()) {
-            /**
-             * the require() call is the init expression in a simple variable
-             * declaration statement, something like
-             *
-             *     var x = require("./x"),
-             *         y = require("./y");
-             *
-             * in this case, we simply replace each require call with an
-             * import statement, e.g.
-             *
-             *     import x from "./x";
-             *     import y from "./y"
-             *
-             */
-            const idefspec = t.importDefaultSpecifier(
-              p.parentPath.get("id").node
-            );
-            const idefdec = t.importDeclaration(
-              [idefspec],
-              p.get("arguments.0").node
-            );
-            p.findParent(p => p.isProgram()).unshiftContainer("body", idefdec);
-            p.parentPath.remove();
-            return;
-          }
-          if (p.getStatementParent().get("expression") === p) {
-            /**
-             * if we get here, we are on a standalone require call (the parent
-             * statement is the require() call expression itself), e.g.
-             *
-             *    require("./foo");
-             *
-             * we simply replace it with an import default declaration
-             * with no specifiers, e.g.
-             *
-             *    import "./foo";
-             */
-            const standalone = t.importDeclaration(
-              [],
-              p.get("arguments.0").node
-            );
-            p.remove();
-            p.find(p => p.isProgram()).unshiftContainer("body", standalone);
-            return;
-          }
-          /**
-           * general way to process require() calls, it turns something like:
-           *
-           *    module.exports = require("bar");
-           *
-           * into
-           *
-           *    import _require from "bar";
-           *    export default _require;
-           *
-           * that is, it replaces the require call with a unique identifier and
-           * assigns the imported binding to it.
-           *
-           * TODO: this algorithm needs to be improved because it might cause
-           * issues with cyclic dependencies.
-           */
-          const binding = p.scope.generateUidIdentifier("require");
-          const ispec = t.importDefaultSpecifier(binding);
-          const idec = t.importDeclaration([ispec], p.get("arguments.0").node);
-          p.replaceWith(binding);
-          p.find(p => p.isProgram()).unshiftContainer("body", idec);
-        },
-        /**
-         * @param {babel.NodePath<babel.types.ImportDeclaration & babel.types.ExportDeclaration>} p
-         */
-        ModuleDeclaration(p) {
-          if (!p.node.source) {
-            return;
-          }
-          const source = resolveModule(
-            p.node.source.value,
-            path.dirname(currentModuleAbsolutePath),
-            config
+/**
+ * @typedef {Object} BabelPluginEsmResolverState
+ * @property {BabelPluginEsmResolverOptions} opts
+ */
+
+/**
+ * @returns {babel.PluginObj<BabelPluginEsmResolverState>}
+ */
+module.exports = () => ({
+  name: "esm-resolver",
+  visitor: {
+    Program: {
+      exit(path) {
+        const evd = findVariableDeclaration(path, "module");
+        if (
+          evd &&
+          !path.get("body").find(p => p.isExportDefaultDeclaration())
+        ) {
+          const edd = t.exportDefaultDeclaration(
+            t.memberExpression(t.identifier("module"), t.identifier("exports"))
           );
-          if (source === null || !JS_FILE_PATTERN.test(source)) {
-            if (config.removeUnresolved) {
-              p.remove();
-            }
-          } else {
-            p.node.source.value = source.replace(PATH_SEPARATOR_REPLACER, "/");
-          }
-        },
-        /**
-         * @param {babel.NodePath<babel.types.MemberExpression>} p
-         */
-        MemberExpression(p) {
-          if (
-            p.get("object").isIdentifier({ name: "module" }) &&
-            p.get("property").isIdentifier({ name: "exports" })
-          ) {
-            if (
-              p.getFunctionParent() !== null ||
-              !p.parentPath.isAssignmentExpression()
-            ) {
-              /**
-               * if we get here, we assume two cases:
-               *
-               * 1. module.exports is being referenced by the function which
-               *    checks the current environment and invokes the factory, e.g.
-               *
-               *      (function(global,factory){module.exports=factory()})(this,function(){});
-               *
-               *    this is a quite common pattern occurring in umd modules.
-               *
-               * 2. a property is being added to the module.exports object, e.g.
-               *
-               *      module.exports.foo = "bar";
-               *
-               * in both cases, we inject the module and exports bindings into the top
-               * level scope
-               */
-              addExportsVariableDeclarationIfNotPresent(p);
-            }
-          }
-          if (p.get("object").isIdentifier({ name: "exports" })) {
-            addExportsVariableDeclarationIfNotPresent(p);
-          }
-        },
-        /**
-         * @param {babel.NodePath<babel.types.VariableDeclarator>} p
-         */
-        VariableDeclarator(p) {
-          /**
-           * here we are looking for something like:
-           *
-           *    var x = require("x");
-           *    var x = require("x");
-           *
-           * that is, distinct variable declarators redeclaring the
-           * same identifier
-           */
-          if (p.node.id.type !== "Identifier") {
-            return;
-          }
-          const init = p.get("init");
-          if (
-            !init.isCallExpression() ||
-            !init.get("callee").isIdentifier({ name: "require" })
-          ) {
-            return;
-          }
-          const binding = p.scope.getBinding(p.node.id.name);
-          if (!binding || binding.constant) {
-            return;
-          }
-          /**
-           * we remove all the duplicates
-           */
-          binding.constantViolations
-            .filter(p => p.isVariableDeclarator())
-            .forEach(p => p.remove());
+          path.pushContainer("body", edd);
         }
       }
-    };
-  };
-}
+    },
+    Identifier(path) {
+      const program = path.findParent(t => t.isProgram());
+      const ae = findExportedBindings(path);
+      for (let expr of ae) {
+        // we make sure the exports binding is available on the root scope
+        addExportsVariableDeclarationIfNotPresent(path);
+        // turns exports.foo = 'bar' into export const foo = exports.foo;
+        const e = t.identifier("exports");
+        const pr = t.identifier(expr.get("left").get("property").node.name);
+        const me = t.memberExpression(e, pr);
+        if (pr.name === "default") {
+          // add export default declaration if the named export's name is `default`
+          const edd = t.exportDefaultDeclaration(me);
+          program.pushContainer("body", edd);
+          continue;
+        }
+        const vd = t.variableDeclarator(pr, me);
+        const vad = t.variableDeclaration("const", [vd]);
+        const es = t.exportSpecifier(pr, pr);
+        const end = t.exportNamedDeclaration(vad, [es]);
+        program.pushContainer("body", end);
+      }
+    },
+    AssignmentExpression: {
+      exit(path) {
+        if (path.scope.parent !== null) {
+          return;
+        }
+        const left = path.get("left");
+        if (!left.isMemberExpression()) {
+          return;
+        }
+        if (
+          !left.get("object").isIdentifier({ name: "module" }) ||
+          !left.get("property").isIdentifier({ name: "exports" })
+        ) {
+          return;
+        }
+        if (
+          path.parentPath.isExpressionStatement() &&
+          path.parentPath.get("expression") === path
+        ) {
+          /**
+           * simple case where assignment to module.exports happens on a standalone
+           * assignment expression, e.g.
+           *
+           *   module.exports = foo;
+           *
+           * we simply rewrite it as:
+           *
+           *   export default foo;
+           */
+          path.replaceWithMultiple(
+            t.exportDefaultDeclaration(path.get("right").node)
+          );
+          return;
+        }
 
-module.exports = babelPluginEsmResolverFactory;
+        /**
+         * module.exports assignment expression's is the right node of an
+         * assignment expression itself, e.g.
+         *
+         *    var assert = foo = bar = module.exports = ok;
+         *
+         * we rewrite it as:
+         *
+         *    export default ok;
+         *    var assert = foo = bar = ok;
+         */
+        const right = path.get("right");
+        const edd = t.exportDefaultDeclaration(right.node);
+        path.find(pp => pp.isProgram()).unshiftContainer("body", edd);
+        path.replaceWith(right.node);
+      }
+    },
+    CallExpression(path) {
+      if (!path.get("callee").isIdentifier({ name: "require" })) {
+        return;
+      }
+      if (path.parentPath.isVariableDeclarator()) {
+        /**
+         * the require() call is the init expression in a simple variable
+         * declaration statement, something like
+         *
+         *     var x = require("./x"),
+         *         y = require("./y");
+         *
+         * in this case, we simply replace each require call with an
+         * import statement, e.g.
+         *
+         *     import x from "./x";
+         *     import y from "./y"
+         *
+         */
+        const idefspec = t.importDefaultSpecifier(
+          path.parentPath.get("id").node
+        );
+        const idefdec = t.importDeclaration(
+          [idefspec],
+          path.get("arguments.0").node
+        );
+        path.findParent(p => p.isProgram()).unshiftContainer("body", idefdec);
+        path.parentPath.remove();
+        return;
+      }
+      if (path.getStatementParent().get("expression") === path) {
+        /**
+         * if we get here, we are on a standalone require call (the parent
+         * statement is the require() call expression itself), e.g.
+         *
+         *    require("./foo");
+         *
+         * we simply replace it with an import default declaration
+         * with no specifiers, e.g.
+         *
+         *    import "./foo";
+         */
+        const standalone = t.importDeclaration(
+          [],
+          path.get("arguments.0").node
+        );
+        path.remove();
+        path.find(p => p.isProgram()).unshiftContainer("body", standalone);
+        return;
+      }
+      /**
+       * general way to process require() calls, it turns something like:
+       *
+       *    module.exports = require("bar");
+       *
+       * into
+       *
+       *    import _require from "bar";
+       *    export default _require;
+       *
+       * that is, it replaces the require call with a unique identifier and
+       * assigns the imported binding to it.
+       *
+       * TODO: this algorithm needs to be improved because it might cause
+       * issues with cyclic dependencies.
+       */
+      const binding = path.scope.generateUidIdentifier("require");
+      const ispec = t.importDefaultSpecifier(binding);
+      const idec = t.importDeclaration([ispec], path.get("arguments.0").node);
+      path.replaceWith(binding);
+      path.find(p => p.isProgram()).unshiftContainer("body", idec);
+    },
+    ImportDeclaration(path, state) {
+      if (!path.node.source) {
+        return;
+      }
+      const { config, currentModuleAbsolutePath } = state.opts;
+      const source = resolveModule(
+        path.node.source.value,
+        ospath.dirname(currentModuleAbsolutePath),
+        config
+      );
+      if (source === null || !JS_FILE_PATTERN.test(source)) {
+        if (config.removeUnresolved) {
+          path.remove();
+        }
+      } else {
+        path.node.source.value = source.replace(PATH_SEPARATOR_REPLACER, "/");
+      }
+    },
+    MemberExpression(path) {
+      if (
+        path.get("object").isIdentifier({ name: "module" }) &&
+        path.get("property").isIdentifier({ name: "exports" })
+      ) {
+        if (
+          path.getFunctionParent() !== null ||
+          !path.parentPath.isAssignmentExpression()
+        ) {
+          /**
+           * if we get here, we assume two cases:
+           *
+           * 1. module.exports is being referenced by the function which
+           *    checks the current environment and invokes the factory, e.g.
+           *
+           *      (function(global,factory){module.exports=factory()})(this,function(){});
+           *
+           *    this is a quite common pattern occurring in umd modules.
+           *
+           * 2. a property is being added to the module.exports object, e.g.
+           *
+           *      module.exports.foo = "bar";
+           *
+           * in both cases, we inject the module and exports bindings into the top
+           * level scope
+           */
+          addExportsVariableDeclarationIfNotPresent(path);
+        }
+      }
+      if (path.get("object").isIdentifier({ name: "exports" })) {
+        addExportsVariableDeclarationIfNotPresent(path);
+      }
+    },
+    VariableDeclarator(path) {
+      /**
+       * here we are looking for something like:
+       *
+       *    var x = require("x");
+       *    var x = require("x");
+       *
+       * that is, distinct variable declarators redeclaring the
+       * same identifier
+       */
+      if (path.node.id.type !== "Identifier") {
+        return;
+      }
+      const init = path.get("init");
+      if (
+        !init.isCallExpression() ||
+        !init.get("callee").isIdentifier({ name: "require" })
+      ) {
+        return;
+      }
+      const binding = path.scope.getBinding(path.node.id.name);
+      if (!binding || binding.constant) {
+        return;
+      }
+      /**
+       * we remove all the duplicates
+       */
+      binding.constantViolations
+        .filter(p => p.isVariableDeclarator())
+        .forEach(p => p.remove());
+    }
+  }
+});
