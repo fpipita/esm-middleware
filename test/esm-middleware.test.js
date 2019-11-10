@@ -819,6 +819,39 @@ test("duplicate variable declarators (test case from jszip package)", async () =
   );
 });
 
+test("module.exports reference happens within a child scope (use case from package inherits)", async () => {
+  fs.__setFiles({
+    path: "/inherits_browser.js",
+    content: `
+      if (typeof Object.create === 'function') {
+        module.exports = function inherits(ctor, superCtor) {
+        };
+      } else {
+        module.exports = function inherits(ctor, superCtor) {
+        };
+      }
+      `
+  });
+
+  const app = express();
+  app.use(esm("/"));
+  const res = await request(app).get("/inherits_browser.js");
+  expect(res.text).toMatchInlineSnapshot(`
+    "const module = {
+      exports: {}
+    };
+    const exports = module.exports;
+
+    if (typeof Object.create === 'function') {
+      module.exports = function inherits(ctor, superCtor) {};
+    } else {
+      module.exports = function inherits(ctor, superCtor) {};
+    }
+
+    export default module.exports;"
+  `);
+});
+
 describe("config.removeUnresolved", () => {
   test("prevents unresolved/unsupported modules from being removed when set to `false`", async () => {
     fs.__setFiles({

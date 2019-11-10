@@ -104,45 +104,6 @@ function findExportedBindings(p) {
     .flat();
 }
 
-function findVariableDeclaration(p, name) {
-  return p
-    .find(p => p.isProgram())
-    .get("body")
-    .find(p => {
-      if (!p.isVariableDeclaration()) {
-        return false;
-      }
-      return p.get("declarations").find(p => {
-        return p.get("id").isIdentifier({ name });
-      });
-    });
-}
-
-function addExportsVariableDeclarationIfNotPresent(p) {
-  const program = p.findParent(p => p.isProgram());
-  if (findVariableDeclaration(program, "module")) {
-    return;
-  }
-  const modmembexp = t.memberExpression(
-    t.identifier("module"),
-    t.identifier("exports")
-  );
-  const expvdec = t.variableDeclarator(t.identifier("exports"), modmembexp);
-  const expvadec = t.variableDeclaration("const", [expvdec]);
-  program.unshiftContainer("body", expvadec);
-
-  const expprop = t.objectProperty(
-    t.identifier("exports"),
-    t.objectExpression([])
-  );
-  const modvdec = t.variableDeclarator(
-    t.identifier("module"),
-    t.objectExpression([expprop])
-  );
-  const modvadec = t.variableDeclaration("const", [modvdec]);
-  program.unshiftContainer("body", modvadec);
-}
-
 /**
  * @typedef {Object} BabelPluginEsmResolverOptions
  * @property {string} currentModuleAbsolutePath
@@ -162,24 +123,60 @@ module.exports = () => ({
   visitor: {
     Program: {
       exit(path) {
-        const evd = findVariableDeclaration(path, "module");
+        /**
+         * Here we check whether there are still any references left
+         * to the global `module` and `exports` bindings after that
+         * the AST transformations are applied (some of the
+         * transformations remove the global references completely,
+         * e.g. module.exports = foo --> export default foo).
+         * If there is some reference left, we shadow global
+         * `module` and `exports` bindings by pushing their local
+         * counterparts to the program scope.
+         *
+         * It seems that Babel does not automatically update scope
+         * info (e.g. reference count, globals etc) when the AST
+         * changes so we need to manually do it by calling crawl().
+         */
+        path.scope.crawl();
         if (
-          evd &&
-          !path.get("body").find(p => p.isExportDefaultDeclaration())
+          !path.scope.hasGlobal("module") &&
+          !path.scope.hasGlobal("exports")
         ) {
-          const edd = t.exportDefaultDeclaration(
-            t.memberExpression(t.identifier("module"), t.identifier("exports"))
-          );
-          path.pushContainer("body", edd);
+          return;
         }
+        const mod = t.variableDeclaration("const", [
+          t.variableDeclarator(
+            t.identifier("module"),
+            t.objectExpression([
+              t.objectProperty(t.identifier("exports"), t.objectExpression([]))
+            ])
+          )
+        ]);
+        const exp = t.variableDeclaration("const", [
+          t.variableDeclarator(
+            t.identifier("exports"),
+            t.memberExpression(t.identifier("module"), t.identifier("exports"))
+          )
+        ]);
+        const s = path.get("body").filter(n => n.isImportDeclaration());
+        if (s.length > 0) {
+          s[s.length - 1].insertAfter([mod, exp]);
+        } else {
+          path.unshiftContainer("body", [mod, exp]);
+        }
+        if (path.get("body").find(n => n.isExportDefaultDeclaration())) {
+          return;
+        }
+        const edd = t.exportDefaultDeclaration(
+          t.memberExpression(t.identifier("module"), t.identifier("exports"))
+        );
+        path.pushContainer("body", edd);
       }
     },
     Identifier(path) {
-      const program = path.findParent(t => t.isProgram());
+      const program = path.findParent(n => n.isProgram());
       const ae = findExportedBindings(path);
       for (let expr of ae) {
-        // we make sure the exports binding is available on the root scope
-        addExportsVariableDeclarationIfNotPresent(path);
         // turns exports.foo = 'bar' into export const foo = exports.foo;
         const e = t.identifier("exports");
         const pr = t.identifier(expr.get("left").get("property").node.name);
@@ -337,39 +334,6 @@ module.exports = () => ({
         }
       } else {
         path.node.source.value = source.replace(PATH_SEPARATOR_REPLACER, "/");
-      }
-    },
-    MemberExpression(path) {
-      if (
-        path.get("object").isIdentifier({ name: "module" }) &&
-        path.get("property").isIdentifier({ name: "exports" })
-      ) {
-        if (
-          path.getFunctionParent() !== null ||
-          !path.parentPath.isAssignmentExpression()
-        ) {
-          /**
-           * if we get here, we assume two cases:
-           *
-           * 1. module.exports is being referenced by the function which
-           *    checks the current environment and invokes the factory, e.g.
-           *
-           *      (function(global,factory){module.exports=factory()})(this,function(){});
-           *
-           *    this is a quite common pattern occurring in umd modules.
-           *
-           * 2. a property is being added to the module.exports object, e.g.
-           *
-           *      module.exports.foo = "bar";
-           *
-           * in both cases, we inject the module and exports bindings into the top
-           * level scope
-           */
-          addExportsVariableDeclarationIfNotPresent(path);
-        }
-      }
-      if (path.get("object").isIdentifier({ name: "exports" })) {
-        addExportsVariableDeclarationIfNotPresent(path);
       }
     },
     VariableDeclarator(path) {
