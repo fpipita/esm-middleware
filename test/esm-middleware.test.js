@@ -852,6 +852,42 @@ test("module.exports reference happens within a child scope (use case from packa
   `);
 });
 
+test("export all declaration", async () => {
+  fs.__setFiles(
+    {
+      path: "/index.js",
+      content: "export * from './api'"
+    },
+    {
+      path: "/api.js",
+      content: "export const api = 'api';"
+    }
+  );
+  const app = express();
+  app.use(esm("/"));
+  const res = await request(app).get("/index.js");
+  expect(res.text).toMatchInlineSnapshot('"export * from \\"./api.js\\";"');
+});
+
+test("export named declaration", async () => {
+  fs.__setFiles(
+    {
+      path: "/index.js",
+      content: "export { api } from './api'"
+    },
+    {
+      path: "/api.js",
+      content: "export const api = 'api';"
+    }
+  );
+  const app = express();
+  app.use(esm("/"));
+  const res = await request(app).get("/index.js");
+  expect(res.text).toMatchInlineSnapshot(
+    '"export { api } from \\"./api.js\\";"'
+  );
+});
+
 describe("config.removeUnresolved", () => {
   test("prevents unresolved/unsupported modules from being removed when set to `false`", async () => {
     fs.__setFiles({

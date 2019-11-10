@@ -318,7 +318,14 @@ module.exports = () => ({
       path.replaceWith(binding);
       path.find(p => p.isProgram()).unshiftContainer("body", idec);
     },
-    ImportDeclaration(path, state) {
+    /**
+     * @param {babel.NodePath<babel.types.ImportDeclaration | babel.types.ExportAllDeclaration | babel.types.ExportNamedDeclaration>} path
+     * @param {BabelPluginEsmResolverState} state
+     */
+    "ImportDeclaration|ExportAllDeclaration|ExportNamedDeclaration"(
+      path,
+      state
+    ) {
       if (!path.node.source) {
         return;
       }
