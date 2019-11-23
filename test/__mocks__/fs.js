@@ -7,7 +7,9 @@ function findFile(
   path,
   found = () => {},
   notFound = path => {
-    throw new Error(`${path}: file not found`);
+    const error = new Error(`${path}: file not found`);
+    error.code = "ENOENT";
+    throw error;
   }
 ) {
   const content = _files.get(path);
@@ -28,7 +30,11 @@ function readFileSync(path) {
 }
 
 function existsSync(path) {
-  return findFile(path, () => true, () => false);
+  return findFile(
+    path,
+    () => true,
+    () => false
+  );
 }
 
 function statSync(path) {
