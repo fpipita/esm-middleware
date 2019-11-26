@@ -1,7 +1,8 @@
-const path = require("path");
+const ospath = require("path");
 const fs = require("fs");
-const { JS_FILE_PATTERN } = require("./constants");
+const { JS_FILE_PATTERN } = require("./common");
 
+const PATH_SEPARATOR_REPLACER = /[/\\]+/g;
 const MODULE_SPECIFIER_PATTERN = /^[./]/;
 
 /**
@@ -9,11 +10,11 @@ const MODULE_SPECIFIER_PATTERN = /^[./]/;
  * @returns {string}
  */
 function joinRelativePath(...paths) {
-  const result = path.join(...paths);
-  if (path.isAbsolute(result) || MODULE_SPECIFIER_PATTERN.test(result)) {
+  const result = ospath.join(...paths);
+  if (ospath.isAbsolute(result) || MODULE_SPECIFIER_PATTERN.test(result)) {
     return result;
   }
-  return `.${path.sep}${result}`;
+  return `.${ospath.sep}${result}`;
 }
 
 /**
@@ -22,7 +23,7 @@ function joinRelativePath(...paths) {
  * @returns {string | null}
  */
 function resolveValidModuleSpecifier(source, currentModuleDir) {
-  const p = path.resolve(currentModuleDir, source);
+  const p = ospath.resolve(currentModuleDir, source);
   if (!fs.existsSync(p)) {
     if (!JS_FILE_PATTERN.test(p)) {
       return resolveValidModuleSpecifier(source + ".js", currentModuleDir);
@@ -52,7 +53,7 @@ function resolveValidModuleSpecifier(source, currentModuleDir) {
  * @returns {string | null}
  */
 function resolveNodeModuleFromPackageJson(dir) {
-  const p = path.resolve(dir, "package.json");
+  const p = ospath.resolve(dir, "package.json");
   if (!fs.existsSync(p)) {
     return null;
   }
@@ -61,7 +62,7 @@ function resolveNodeModuleFromPackageJson(dir) {
   if (!m) {
     return null;
   }
-  const finalPath = path.resolve(dir, m);
+  const finalPath = ospath.resolve(dir, m);
   if (fs.existsSync(finalPath)) {
     return finalPath;
   }
@@ -78,7 +79,7 @@ function resolveNodeModuleFromPackageJson(dir) {
  * if source could be resolved or null.
  */
 function resolveInvalidModuleSpecifier(source, nodeModulesRoot) {
-  const p = path.resolve(nodeModulesRoot, source);
+  const p = ospath.resolve(nodeModulesRoot, source);
   if (!fs.existsSync(p)) {
     if (!JS_FILE_PATTERN.test(p)) {
       return resolveInvalidModuleSpecifier(source + ".js", nodeModulesRoot);
@@ -90,7 +91,7 @@ function resolveInvalidModuleSpecifier(source, nodeModulesRoot) {
     return (
       resolveNodeModuleFromPackageJson(p) ||
       resolveInvalidModuleSpecifier(
-        path.join(source, "index.js"),
+        ospath.join(source, "index.js"),
         nodeModulesRoot
       )
     );
@@ -119,6 +120,39 @@ function resolveModule(source, currentModuleDir, config) {
   return null;
 }
 
-module.exports = {
-  resolveModule
-};
+/**
+ * @param {babel.NodePath<babel.types.ImportDeclaration | babel.types.ExportAllDeclaration | babel.types.ExportNamedDeclaration>} path
+ * @param {import("./esm-middleware").BabelPluginEsmMiddlewareState} state
+ */
+function ImportDeclaration(path, state) {
+  if (!path.node.source) {
+    return;
+  }
+  const { config, currentModuleAbsolutePath } = state.opts;
+  const source = resolveModule(
+    path.node.source.value,
+    ospath.dirname(currentModuleAbsolutePath),
+    config
+  );
+  if (source === null || !JS_FILE_PATTERN.test(source)) {
+    if (config.removeUnresolved) {
+      path.remove();
+    }
+  } else {
+    path.node.source.value = source.replace(PATH_SEPARATOR_REPLACER, "/");
+  }
+}
+
+/**
+ * This plugin rewrites module specifiers so that they
+ * can be resolved to a path which is served by the middleware.
+ *
+ * @type {import("./esm-middleware").EsmMiddlewareBabelPlugin}
+ */
+module.exports = () => ({
+  visitor: {
+    ImportDeclaration,
+    ExportAllDeclaration: ImportDeclaration,
+    ExportNamedDeclaration: ImportDeclaration
+  }
+});

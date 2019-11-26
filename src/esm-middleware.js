@@ -2,7 +2,28 @@ const crypto = require("crypto");
 const babel = require("@babel/core");
 const path = require("path");
 const fs = require("fs");
-const { JS_FILE_PATTERN } = require("./constants");
+const { JS_FILE_PATTERN } = require("./common");
+
+/**
+ * Babel plugin handbook https://github.com/jamiebuilds/babel-handbook/blob/master/translations/en/plugin-handbook.md
+ * ESTree AST reference https://github.com/babel/babylon/blob/master/ast/spec.md
+ */
+
+/**
+ * @typedef {Object} BabelPluginEsmResolverOptions
+ * @property {string} currentModuleAbsolutePath
+ * @property {import("./esm-middleware").EsmMiddlewareConfigObject} config
+ */
+
+/**
+ * @typedef {Object} BabelPluginEsmMiddlewareState
+ * @property {BabelPluginEsmResolverOptions} opts
+ */
+
+/**
+ * @callback EsmMiddlewareBabelPlugin
+ * @returns {babel.PluginObj<BabelPluginEsmMiddlewareState>}
+ */
 
 /**
  * @typedef {Object} CacheEntry
@@ -12,17 +33,17 @@ const { JS_FILE_PATTERN } = require("./constants");
 
 /**
  * @typedef {Object} EsmMiddlewareConfigObject
- * @property {string=} root absolute local path where user
- * code is located. Defaults to `process.cwd()`.
- * @property {string=} rootPublicPath defines the endpoint at which
- * source code will be made available. Defaults to `/`.
- * @property {string=} nodeModulesRoot absolute local path
- * pointing to the directory where npm packages are located.
- * Defaults to `${process.cwd()}/node_modules`.
- * @property {string=} nodeModulesPublicPath defines the endpoint
- * at which node_modules will be made available. Defaults to `/node_modules`.
- * @property {boolean=} removeUnresolved if `true`, modules that
- * couldn't be resolved are removed. Defaults to `false`.
+ * @property {string} [root=path.resolve()] absolute local path where user
+ * code is located.
+ * @property {string} [rootPublicPath="/"] defines the endpoint at which
+ * source code will be made available.
+ * @property {string} [nodeModulesRoot=path.resolve("node_modules")]
+ * absolute local path pointing to the directory where npm packages
+ * are located.
+ * @property {string} [nodeModulesPublicPath="/node_modules"] defines
+ * the endpoint at which node_modules will be made available.
+ * @property {boolean} [removeUnresolved=true] if `true`, modules that
+ * couldn't be resolved are removed.
  */
 
 /**
@@ -72,16 +93,20 @@ function esmMiddlewareFactory(root = path.resolve(), options) {
     if (filePath.endsWith(".json")) {
       return `export default ${content};`;
     }
+    const options = {
+      currentModuleAbsolutePath: filePath,
+      config: finalOptions
+    };
     const result = babel.transformSync(content, {
       plugins: [
         require("babel-plugin-syntax-dynamic-import"),
-        [
-          require("./babel-plugin-esm-resolver"),
-          {
-            currentModuleAbsolutePath: filePath,
-            config: finalOptions
-          }
-        ]
+        [require("./babel-plugin-shadow-global-module"), options],
+        [require("./babel-plugin-module-specifiers"), options],
+        [require("./babel-plugin-named-exports"), options],
+        [require("./babel-plugin-named-exports-umd"), options],
+        [require("./babel-plugin-imports-variable-declarator"), options],
+        [require("./babel-plugin-imports-standalone"), options],
+        [require("./babel-plugin-imports-assignment"), options]
       ]
     });
     if (result && result.code) {
