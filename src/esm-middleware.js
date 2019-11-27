@@ -103,7 +103,8 @@ function esmMiddlewareFactory(root = path.resolve(), options) {
         [require("./babel-plugin-shadow-global-module"), options],
         [require("./babel-plugin-module-specifiers"), options],
         [require("./babel-plugin-named-exports"), options],
-        [require("./babel-plugin-named-exports-umd"), options],
+        [require("./babel-plugin-named-exports-factory"), options],
+        [require("./babel-plugin-named-exports-factory-call"), options],
         [require("./babel-plugin-imports-variable-declarator"), options],
         [require("./babel-plugin-imports-standalone"), options],
         [require("./babel-plugin-imports-assignment"), options]

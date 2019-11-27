@@ -483,6 +483,80 @@ describe("import specifiers", () => {
   });
 });
 
+describe("imports", () => {
+  test("avoid early usage of imported bindings when not needed", async () => {
+    fs.__setFiles(
+      {
+        path: "/x.js",
+        content: "var y = require('./y'); module.exports = 'x';"
+      },
+      {
+        path: "/y.js",
+        content: "module.exports = 'y';"
+      }
+    );
+    const app = express();
+    app.use(esm("/", { nodeModulesRoot: "/node_modules" }));
+    const r1 = await request(app).get("/x.js");
+    expect(r1.text).toMatchInlineSnapshot(`
+      "import y from \\"./y.js\\";
+      const module = {
+        exports: {}
+      };
+      const exports = module.exports;
+      module.exports = 'x';
+      export default module.exports;"
+    `);
+  });
+
+  test("variable declaration with more than one declarator", async () => {
+    fs.__setFiles(
+      {
+        path: "/x.js",
+        content: "var y = require('./y'), t = require('./t');"
+      },
+      {
+        path: "/y.js",
+        content: "module.exports = 'y';"
+      },
+      {
+        path: "/t.js",
+        content: "module.exports = 't';"
+      }
+    );
+    const app = express();
+    app.use(esm("/", { nodeModulesRoot: "/node_modules" }));
+    const r1 = await request(app).get("/x.js");
+    expect(r1.text).toMatchInlineSnapshot(`
+      "import y from \\"./y.js\\";
+      import t from \\"./t.js\\";"
+    `);
+  });
+
+  test("duplicate variable declarators (test case from jszip package)", async () => {
+    fs.__setFiles(
+      {
+        path: "/load.js",
+        content: `
+          var utils = require("./utils");
+          var utils = require("./utils");
+        `
+      },
+      {
+        path: "/utils.js",
+        content: "module.exports = 'utils';"
+      }
+    );
+
+    const app = express();
+    app.use(esm("/"));
+    const res = await request(app).get("/load.js");
+    expect(res.text).toMatchInlineSnapshot(
+      '"import utils from \\"./utils.js\\";"'
+    );
+  });
+});
+
 describe("default exports", () => {
   test("umd use case from package type-detect", async () => {
     fs.__setFiles({
@@ -787,80 +861,6 @@ describe("default exports", () => {
   });
 });
 
-describe("imports", () => {
-  test("avoid early usage of imported bindings when not needed", async () => {
-    fs.__setFiles(
-      {
-        path: "/x.js",
-        content: "var y = require('./y'); module.exports = 'x';"
-      },
-      {
-        path: "/y.js",
-        content: "module.exports = 'y';"
-      }
-    );
-    const app = express();
-    app.use(esm("/", { nodeModulesRoot: "/node_modules" }));
-    const r1 = await request(app).get("/x.js");
-    expect(r1.text).toMatchInlineSnapshot(`
-      "import y from \\"./y.js\\";
-      const module = {
-        exports: {}
-      };
-      const exports = module.exports;
-      module.exports = 'x';
-      export default module.exports;"
-    `);
-  });
-
-  test("variable declaration with more than one declarator", async () => {
-    fs.__setFiles(
-      {
-        path: "/x.js",
-        content: "var y = require('./y'), t = require('./t');"
-      },
-      {
-        path: "/y.js",
-        content: "module.exports = 'y';"
-      },
-      {
-        path: "/t.js",
-        content: "module.exports = 't';"
-      }
-    );
-    const app = express();
-    app.use(esm("/", { nodeModulesRoot: "/node_modules" }));
-    const r1 = await request(app).get("/x.js");
-    expect(r1.text).toMatchInlineSnapshot(`
-      "import y from \\"./y.js\\";
-      import t from \\"./t.js\\";"
-    `);
-  });
-
-  test("duplicate variable declarators (test case from jszip package)", async () => {
-    fs.__setFiles(
-      {
-        path: "/load.js",
-        content: `
-          var utils = require("./utils");
-          var utils = require("./utils");
-        `
-      },
-      {
-        path: "/utils.js",
-        content: "module.exports = 'utils';"
-      }
-    );
-
-    const app = express();
-    app.use(esm("/"));
-    const res = await request(app).get("/load.js");
-    expect(res.text).toMatchInlineSnapshot(
-      '"import utils from \\"./utils.js\\";"'
-    );
-  });
-});
-
 describe("named exports", () => {
   test("call expression involving `exports` as one of its arguments happening as a top level statement (test case from safe-buffer package)", async () => {
     fs.__setFiles({
@@ -1097,6 +1097,34 @@ describe("named exports", () => {
       export const createLogger = exports.createLogger;
       export const logger = exports.logger;
       export default exports.default;"
+    `);
+  });
+
+  test("factory invocation through `Function.prototype.call`", async () => {
+    fs.__setFiles({
+      path: "/app.js",
+      content: `
+        (function(exports, module, define) {
+          var validate = function() {};
+          exports.validate = validate;
+        }).call(this, typeof exports !== 'undefined' ? exports : null);
+    `
+    });
+    const app = express();
+    app.use(esm("/", { nodeModulesRoot: "/node_modules" }));
+    const r1 = await request(app).get("/app.js");
+    expect(r1.text).toMatchInlineSnapshot(`
+      "const module = {
+        exports: {}
+      };
+      const exports = module.exports;
+      (function (exports, module, define) {
+        var validate = function () {};
+
+        exports.validate = validate;
+      }).call(this, typeof exports !== 'undefined' ? exports : null);
+      export const validate = exports.validate;
+      export default module.exports;"
     `);
   });
 });

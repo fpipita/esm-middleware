@@ -58,7 +58,7 @@ module.exports = () => ({
         /**
          * !**function(t){t(exports)}**(function(e){e.bar='foo'})
          */
-        const p5 = /** @type {babel.NodePath<babel.types.FunctionExpression>} */ (p4.parentPath.parentPath.get(
+        const p5 = /** @type {babel.NodePath<babel.types.FunctionExpression>} */ (p7.parentPath.get(
           "callee"
         ));
         /**

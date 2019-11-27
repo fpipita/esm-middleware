@@ -15,6 +15,9 @@ module.exports = () => ({
   visitor: {
     AssignmentExpression: {
       exit(path) {
+        if (path.findParent(parent => parent.isBlockStatement())) {
+          return;
+        }
         /**
          * **module.exports.foo** = bar;
          */
