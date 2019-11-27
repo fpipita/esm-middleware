@@ -830,35 +830,6 @@ describe("default exports", () => {
       export default module.exports;"
     `);
   });
-
-  /**
-   * TODO: this should be moved to the named exports suite as
-   * it should be possible to
-   *
-   *   import { ok } from "assert"
-   */
-  test("property added to a binding referencing module.exports", async () => {
-    fs.__setFiles({
-      path: "/assert.js",
-      content: `
-        var assert = module.exports = ok;
-        assert.ok = ok;
-      `
-    });
-
-    const app = express();
-    app.use(esm("/"));
-    const res = await request(app).get("/assert.js");
-    expect(res.text).toMatchInlineSnapshot(`
-      "const module = {
-        exports: {}
-      };
-      const exports = module.exports;
-      var assert = module.exports = ok;
-      assert.ok = ok;
-      export default module.exports;"
-    `);
-  });
 });
 
 describe("named exports", () => {
@@ -1124,6 +1095,54 @@ describe("named exports", () => {
         exports.validate = validate;
       }).call(this, typeof exports !== 'undefined' ? exports : null);
       export const validate = exports.validate;
+      export default module.exports;"
+    `);
+  });
+
+  test("property added to a binding referencing module.exports", async () => {
+    fs.__setFiles({
+      path: "/assert.js",
+      content: `
+        var assert = module.exports = ok;
+        assert.ok = ok;
+      `
+    });
+
+    const app = express();
+    app.use(esm("/"));
+    const res = await request(app).get("/assert.js");
+    expect(res.text).toMatchInlineSnapshot(`
+      "const module = {
+        exports: {}
+      };
+      const exports = module.exports;
+      var assert = module.exports = ok;
+      assert.ok = ok;
+      export { ok };
+      export default module.exports;"
+    `);
+  });
+
+  test("property added to a binding referencing exports", async () => {
+    fs.__setFiles({
+      path: "/assert.js",
+      content: `
+        var assert = exports;
+        assert.ok = ok;
+      `
+    });
+
+    const app = express();
+    app.use(esm("/"));
+    const res = await request(app).get("/assert.js");
+    expect(res.text).toMatchInlineSnapshot(`
+      "const module = {
+        exports: {}
+      };
+      const exports = module.exports;
+      var assert = exports;
+      assert.ok = ok;
+      export { ok };
       export default module.exports;"
     `);
   });
