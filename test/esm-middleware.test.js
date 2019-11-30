@@ -1146,4 +1146,39 @@ describe("named exports", () => {
       export default module.exports;"
     `);
   });
+
+  test("top level indirect assignment to exports (test case from events package)", async () => {
+    fs.__setFiles({
+      path: "/events.js",
+      content: `
+        function EventEmitter() {
+          EventEmitter.init.call(this);
+        }
+
+        module.exports = EventEmitter; // Backwards-compat with node 0.10.x
+
+        EventEmitter.EventEmitter = EventEmitter;
+      `
+    });
+
+    const app = express();
+    app.use(esm("/"));
+    const res = await request(app).get("/events.js");
+    expect(res.text).toMatchInlineSnapshot(`
+      "const module = {
+        exports: {}
+      };
+      const exports = module.exports;
+
+      function EventEmitter() {
+        EventEmitter.init.call(this);
+      }
+
+      module.exports = EventEmitter; // Backwards-compat with node 0.10.x
+
+      EventEmitter.EventEmitter = EventEmitter;
+      export { EventEmitter };
+      export default module.exports;"
+    `);
+  });
 });

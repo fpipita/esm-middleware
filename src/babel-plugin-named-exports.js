@@ -4,7 +4,7 @@ const t = require("@babel/types");
  * @param {babel.NodePath<any>} path
  * @returns {boolean}
  */
-function searchAssignmentExpression(path) {
+function searchInAssignmentExpression(path) {
   if (path.isMemberExpression()) {
     path = /** @type {babel.NodePath} */ (path.get("property"));
   }
@@ -12,28 +12,29 @@ function searchAssignmentExpression(path) {
     return true;
   }
   if (path.isAssignmentExpression()) {
-    const found = searchAssignmentExpression(path.get("left"));
+    const found = searchInAssignmentExpression(path.get("left"));
     if (found) {
       return true;
     }
-    return searchAssignmentExpression(path.get("right"));
+    return searchInAssignmentExpression(path.get("right"));
   }
   return false;
 }
 
 /**
  * @param {babel.NodePath} path
- * @returns {boolean} `true` if `path` is a direct reference to
- * `exports`, e.g.
+ * @returns {boolean} `true` if `path` is a direct or indirect
+ * reference to `exports`, e.g.
  *
  * ```javascript
+ * // exports is a direct reference
  * exports.foo = 'bar';
- * ```
  *
- * or an alias to it, e.g.
- *
- * ```javascript
+ * // assert and ok are aliases for exports
  * var assert = module.exports = ok;
+ *
+ * // foo is an alias for exports
+ * module.exports = foo;
  * ```
  */
 function isExportsBinding(path) {
@@ -55,14 +56,22 @@ function isExportsBinding(path) {
    * **var assert = module.exports = ok**;
    */
   const p2 = b1.path;
-  if (!p2.isVariableDeclarator()) {
-    return false;
+  if (p2.isVariableDeclarator()) {
+    /**
+     * var assert = **module.exports = ok**;
+     */
+    const p3 = p2.get("init");
+    return searchInAssignmentExpression(p3);
   }
-  /**
-   * var assert = **module.exports = ok**;
-   */
-  const p3 = p2.get("init");
-  return searchAssignmentExpression(p3);
+  for (const p4 of b1.referencePaths) {
+    if (p4.parentPath.isAssignmentExpression()) {
+      const found = searchInAssignmentExpression(p4.parentPath);
+      if (found) {
+        return true;
+      }
+    }
+  }
+  return false;
 }
 
 /**
