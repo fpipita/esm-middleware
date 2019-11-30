@@ -555,6 +555,28 @@ describe("imports", () => {
       '"import utils from \\"./utils.js\\";"'
     );
   });
+
+  test("use case from markdown-it", async () => {
+    fs.__setFiles(
+      {
+        path: "/parse_link_destination.js",
+        content: `
+          var unescapeAll = require('./utils').unescapeAll;
+        `
+      },
+      {
+        path: "/utils.js",
+        content: "module.exports = 'utils';"
+      }
+    );
+    const app = express();
+    app.use(esm("/"));
+    const res = await request(app).get("/parse_link_destination.js");
+    expect(res.text).toMatchInlineSnapshot(`
+      "import _require from \\"./utils.js\\";
+      var unescapeAll = _require.unescapeAll;"
+    `);
+  });
 });
 
 describe("default exports", () => {

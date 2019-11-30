@@ -107,7 +107,8 @@ function esmMiddlewareFactory(root = path.resolve(), options) {
         [require("./babel-plugin-named-exports-factory-call"), options],
         [require("./babel-plugin-imports-variable-declarator"), options],
         [require("./babel-plugin-imports-standalone"), options],
-        [require("./babel-plugin-imports-assignment"), options]
+        [require("./babel-plugin-imports-assignment"), options],
+        [require("./babel-plugin-imports-require-member-expression"), options]
       ]
     });
     if (result && result.code) {

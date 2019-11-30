@@ -27,13 +27,13 @@ function searchInAssignmentExpression(path) {
  * reference to `exports`, e.g.
  *
  * ```javascript
- * // exports is a direct reference
+ * // `exports` is an `exports` direct reference
  * exports.foo = 'bar';
  *
- * // assert and ok are aliases for exports
+ * // assert and ok are references to `exports`
  * var assert = module.exports = ok;
  *
- * // foo is an alias for exports
+ * // `foo` is an indirect reference to `exports`
  * module.exports = foo;
  * ```
  */

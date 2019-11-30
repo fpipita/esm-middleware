@@ -2,13 +2,10 @@ const t = require("@babel/types");
 const { hoist } = require("./common");
 
 /**
- * This plugin handles a `require()` call expression happening
- * somewhere within the right side of an assignment expression:
- *
  * ```diff
- * -module.exports.foo = require("bar")
+ * -var foo = require("bar").foo;
  * +import _require from "bar";
- * +module.exports.foo = _require;
+ * +var foo = _require.foo;
  * ```
  * @type {import("./esm-middleware").EsmMiddlewareBabelPlugin}
  */
@@ -22,7 +19,10 @@ module.exports = () => ({
       if (!p1.isStringLiteral()) {
         return;
       }
-      if (!path.findParent(parent => parent.isAssignmentExpression())) {
+      if (!path.parentPath.isMemberExpression()) {
+        return;
+      }
+      if (path.key !== "object") {
         return;
       }
       const id = path.scope
