@@ -44,6 +44,8 @@ const { JS_FILE_PATTERN } = require("./common");
  * the endpoint at which node_modules will be made available.
  * @property {boolean} [removeUnresolved=true] if `true`, modules that
  * couldn't be resolved are removed.
+ * @property {boolean} [disableCaching=false] if `true`, caching will be
+ * disabled and modules will be recompiled on each request.
  */
 
 /**
@@ -70,6 +72,7 @@ function esmMiddlewareFactory(root = path.resolve(), options) {
     nodeModulesRoot: path.resolve("node_modules"),
     nodeModulesPublicPath: "/node_modules",
     removeUnresolved: true,
+    disableCaching: false,
     ...options
   };
   if (!finalOptions.root || !path.isAbsolute(finalOptions.root)) {
@@ -123,6 +126,9 @@ function esmMiddlewareFactory(root = path.resolve(), options) {
    * @returns {string | null}
    */
   function getCode(filePath, content) {
+    if (finalOptions.disableCaching) {
+      return transform(filePath, content);
+    }
     const hash = crypto
       .createHash("md5")
       .update(content)

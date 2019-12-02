@@ -101,16 +101,18 @@ interface EsmMiddlewareConfigObject {
   nodeModulesRoot?: string;
   nodeModulesPublicPath?: string;
   removeUnresolved?: boolean;
+  disableCaching?: boolean;
 }
 ```
 
-| `{`                     | Type      | Default value                  | Description                                                       |
-| :---------------------- | :-------- | :----------------------------- | :---------------------------------------------------------------- |
-| `root`                  | `string`  | `path.resolve()`               | same as the `esmMiddlewareFactory`'s `root` parameter.            |
-| `rootPublicPath`        | `string`  | `/`                            | specifies the public url at which source code will be mounted.    |
-| `nodeModulesRoot`       | `string`  | `path.resolve("node_modules")` | absolute path to the folder containing `npm` packages.            |
-| `nodeModulesPublicPath` | `string`  | `/node_modules`                | specifies the public url at which `node_modules` will be mounted. |
-| `removeUnresolved`      | `boolean` | `true`                         | if `true`, modules that couldn't be resolved are removed.         |
+| `{`                     | Type      | Default value                  | Description                                                                 |
+| :---------------------- | :-------- | :----------------------------- | :-------------------------------------------------------------------------- |
+| `root`                  | `string`  | `path.resolve()`               | same as the `esmMiddlewareFactory`'s `root` parameter.                      |
+| `rootPublicPath`        | `string`  | `/`                            | specifies the public url at which source code will be mounted.              |
+| `nodeModulesRoot`       | `string`  | `path.resolve("node_modules")` | absolute path to the folder containing `npm` packages.                      |
+| `nodeModulesPublicPath` | `string`  | `/node_modules`                | specifies the public url at which `node_modules` will be mounted.           |
+| `removeUnresolved`      | `boolean` | `true`                         | if `true`, modules that couldn't be resolved are removed.                   |
+| `disableCaching`        | `boolean` | `false`                        | if `true`, caching will be disabled and modules recompiled on each request. |
 | `}`                     |           |                                |
 
 Furthermore, the middleware implements a tiny web API which controls whether a certain module should be skipped from processing.
