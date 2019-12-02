@@ -50,12 +50,17 @@ module.exports = () => ({
       if (!p2.isVariableDeclarator()) {
         return;
       }
-      const id = path.parentPath.get("id").node;
-      if (isDuplicateImport(path, id.name)) {
+      const p3 = /** @type {babel.NodePath<babel.types.Identifier>} */ (path.parentPath.get(
+        "id"
+      ));
+      if (isDuplicateImport(path, p3.node.name)) {
         path.parentPath.remove();
         return;
       }
-      const node = t.importDeclaration([t.importDefaultSpecifier(id)], p1.node);
+      const node = t.importDeclaration(
+        [t.importDefaultSpecifier(p3.node)],
+        p1.node
+      );
       hoist(path, node);
       path.parentPath.remove();
     }

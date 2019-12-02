@@ -599,6 +599,28 @@ describe("imports", () => {
       var getLength = Buffer.byteLength.bind(Buffer);"
     `);
   });
+
+  test("use case from markdown-it", async () => {
+    fs.__setFiles(
+      {
+        path: "/parser_core.js",
+        content: `
+          var _rules = [['normalize', require('./normalize')]];
+        `
+      },
+      {
+        path: "/normalize.js",
+        content: "module.exports = 'normalize';"
+      }
+    );
+    const app = express();
+    app.use(esm("/"));
+    const res = await request(app).get("/parser_core.js");
+    expect(res.text).toMatchInlineSnapshot(`
+      "import _require from \\"./normalize.js\\";
+      var _rules = [['normalize', _require]];"
+    `);
+  });
 });
 
 describe("default exports", () => {

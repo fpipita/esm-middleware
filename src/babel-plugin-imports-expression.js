@@ -2,8 +2,7 @@ const t = require("@babel/types");
 const { hoist } = require("./common");
 
 /**
- * This plugin handles a `require()` call expression happening
- * somewhere within the right side of an assignment expression:
+ * The require() call is part of an expression.
  *
  * ```diff
  * -module.exports.foo = require("bar")
@@ -22,7 +21,7 @@ module.exports = () => ({
       if (!p1.isStringLiteral()) {
         return;
       }
-      if (!path.findParent(parent => parent.isAssignmentExpression())) {
+      if (!path.findParent(parent => parent.isExpression())) {
         return;
       }
       const id = path.scope
