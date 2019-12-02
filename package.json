@@ -110,5 +110,8 @@
       "prettier --write",
       "git add"
     ]
+  },
+  "peerDependencies": {
+    "node-libs-browser": "^2.2.1"
   }
 }

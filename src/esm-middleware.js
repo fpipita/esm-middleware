@@ -108,7 +108,8 @@ function esmMiddlewareFactory(root = path.resolve(), options) {
         [require("./babel-plugin-imports-variable-declarator"), options],
         [require("./babel-plugin-imports-standalone"), options],
         [require("./babel-plugin-imports-assignment"), options],
-        [require("./babel-plugin-imports-require-member-expression"), options]
+        [require("./babel-plugin-imports-require-member-expression"), options],
+        [require("./babel-plugin-node-globals"), options]
       ]
     });
     if (result && result.code) {

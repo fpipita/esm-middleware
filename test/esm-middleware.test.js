@@ -577,6 +577,28 @@ describe("imports", () => {
       var unescapeAll = _require.unescapeAll;"
     `);
   });
+
+  test("node Buffer global", async () => {
+    fs.__setFiles(
+      {
+        path: "/index.js",
+        content: `
+          var getLength = Buffer.byteLength.bind(Buffer);
+        `
+      },
+      {
+        path: "/node_modules/buffer/index.js",
+        content: "module.exports = 'buffer';"
+      }
+    );
+    const app = express();
+    app.use(esm("/", { nodeModulesRoot: "/node_modules" }));
+    const res = await request(app).get("/index.js");
+    expect(res.text).toMatchInlineSnapshot(`
+      "import { Buffer } from \\"/node_modules/buffer/index.js\\";
+      var getLength = Buffer.byteLength.bind(Buffer);"
+    `);
+  });
 });
 
 describe("default exports", () => {

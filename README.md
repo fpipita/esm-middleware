@@ -236,6 +236,18 @@ The following sections show some of the CommonJS patterns that are recognized by
 +export default module.exports;
 ```
 
+## Node globals
+
+Node globals are injected by importing them from the `node-libs-browser` package, which has to be provided as a **peer dependency** to `esm-middleware`.
+
+At the moment, the only recognized global is `Buffer`, which is processed as follows:
+
+```diff
+-var getLength = Buffer.byteLength.bind(Buffer);
++import { Buffer } from "buffer";
++var getLength = Buffer.byteLength.bind(Buffer);
+```
+
 ## Known limitations
 
 ### `<script>` tags
