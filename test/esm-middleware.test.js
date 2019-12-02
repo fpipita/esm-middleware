@@ -508,6 +508,34 @@ describe("import specifiers", () => {
       var getLength = Buffer.byteLength.bind(Buffer);"
     `);
   });
+
+  test("support for browser key in package.json (test case from fetch-mock)", async () => {
+    fs.__setFiles(
+      {
+        path: "/app.js",
+        content: 'import fetch from "fetch-mock";'
+      },
+      {
+        path: "/node_modules/fetch-mock/package.json",
+        content: JSON.stringify({
+          main: "./cjs/server.js",
+          browser: "./esm/client.mjs",
+          module: "./esm/server.mjs"
+        })
+      },
+      {
+        path: "/node_modules/fetch-mock/esm/client.mjs",
+        content: "export default 'fetch-mock';"
+      }
+    );
+    const app = express();
+    app.use(esm("/", { nodeModulesRoot: "/node_modules" }));
+    const response = await request(app).get("/app.js");
+    expect(response.status).toEqual(200);
+    expect(response.text).toMatchInlineSnapshot(
+      '"import fetch from \\"/node_modules/fetch-mock/esm/client.mjs\\";"'
+    );
+  });
 });
 
 describe("imports", () => {

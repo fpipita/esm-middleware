@@ -58,11 +58,18 @@ function resolveNodeModuleFromPackageJson(dir) {
     return null;
   }
   const pj = JSON.parse(String(fs.readFileSync(p)));
-  const m = pj.module || pj["jsnext:main"] || pj.main;
-  if (!m) {
+  let main = pj.module || pj["jsnext:main"] || pj.main;
+  if (typeof pj.browser === "string") {
+    /**
+     * The browser field can also contain an object, see:
+     * https://github.com/defunctzombie/package-browser-field-spec
+     */
+    main = pj.browser;
+  }
+  if (!main) {
     return null;
   }
-  const finalPath = ospath.resolve(dir, m);
+  const finalPath = ospath.resolve(dir, main);
   if (fs.existsSync(finalPath)) {
     return finalPath;
   }
