@@ -605,28 +605,6 @@ describe("imports", () => {
     `);
   });
 
-  test("node Buffer global", async () => {
-    fs.__setFiles(
-      {
-        path: "/index.js",
-        content: `
-          var getLength = Buffer.byteLength.bind(Buffer);
-        `
-      },
-      {
-        path: "/node_modules/buffer/index.js",
-        content: "module.exports = 'buffer';"
-      }
-    );
-    const app = express();
-    app.use(esm("/", { nodeModulesRoot: "/node_modules" }));
-    const res = await request(app).get("/index.js");
-    expect(res.text).toMatchInlineSnapshot(`
-      "import { Buffer } from \\"/node_modules/buffer/index.js\\";
-      var getLength = Buffer.byteLength.bind(Buffer);"
-    `);
-  });
-
   test("use case from markdown-it", async () => {
     fs.__setFiles(
       {
@@ -1272,6 +1250,46 @@ describe("named exports", () => {
       EventEmitter.EventEmitter = EventEmitter;
       export { EventEmitter };
       export default module.exports;"
+    `);
+  });
+});
+
+describe("Node globals", () => {
+  test("Buffer", async () => {
+    fs.__setFiles(
+      {
+        path: "/index.js",
+        content: `
+          var getLength = Buffer.byteLength.bind(Buffer);
+        `
+      },
+      {
+        path: "/node_modules/buffer/index.js",
+        content: "module.exports = 'buffer';"
+      }
+    );
+    const app = express();
+    app.use(esm("/", { nodeModulesRoot: "/node_modules" }));
+    const res = await request(app).get("/index.js");
+    expect(res.text).toMatchInlineSnapshot(`
+      "import { Buffer } from \\"/node_modules/buffer/index.js\\";
+      var getLength = Buffer.byteLength.bind(Buffer);"
+    `);
+  });
+
+  test("global", async () => {
+    fs.__setFiles({
+      path: "/index.js",
+      content: `
+          global.foo = bar;
+        `
+    });
+    const app = express();
+    app.use(esm("/", { nodeModulesRoot: "/node_modules" }));
+    const res = await request(app).get("/index.js");
+    expect(res.text).toMatchInlineSnapshot(`
+      "const global = {};
+      global.foo = bar;"
     `);
   });
 });
