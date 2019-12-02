@@ -125,7 +125,7 @@ import foo from "some/polyfill.js?nomodule=true";
 
 ## How it works
 
-Behind the scenes, `esm-middleware` runs a couple Babel transforms that:
+Behind the scenes, `esm-middleware` runs a couple [Babel](https://babeljs.io/) transforms that:
 
 1. Rewrite ES module specifiers so that they resolve to paths that are locally available to the web server and publicly accessible by the web browser;
 2. Convert CommonJS module exports to ESM export declarations;
