@@ -85,7 +85,7 @@ function esmMiddlewareFactory(
 
 where:
 
-- `root` **optional**, can either be an **absolute path** pointing to the folder containing your own code or an instance of the `EsmMiddlewareConfigObject`. It defaults to the **current working directory**;
+- `root` **optional**, can either be an **absolute path** pointing to the folder containing your own code or an instance of the `EsmMiddlewareConfigObject` interface. It defaults to the **current working directory**;
 - `options` **optional**, is an instance of the `EsmMiddlewareConfigObject` interface;
 
 **esm-middleware type definitions**
@@ -123,52 +123,120 @@ import foo from "some/polyfill.js?nomodule=true";
 
 ## How it works
 
-Behind the scenes, `esm-middleware` uses a tiny Babel transform that rewrites ES import/export declaration sources so that they resolve to paths that are locally available to the web server and publicly accessible by the web browser.
+Behind the scenes, `esm-middleware` runs a couple Babel transforms that:
 
-Processed modules are parsed and transformed once. Subsequent requests are fullfilled by sending a **cached** version of each module. The cache **gets invalidated** when files change.
+1. Rewrite ES module specifiers so that they resolve to paths that are locally available to the web server and publicly accessible by the web browser;
+2. Convert CommonJS module exports to ESM export declarations;
+3. Convert CommonJS `require()` calls to ESM import declarations;
+
+Processed modules are parsed and transformed once. Subsequent requests are fullfilled by sending a **cached** version of each module. The cache **gets invalidated** on files change.
+
+## CommonJS to ESM supported patterns
+
+The following sections show some of the CommonJS patterns that are recognized by the middleware and the way they are turned into their ESM equivalents.
+
+### require() to ESM import declaration
+
+#### standalone require() call
+
+```diff
+-require("foo");
++import "foo";
+```
+
+#### require() call happening in assignment expression
+
+```diff
+-module.exports.foo = require("bar")
++import _require from "bar";
++module.exports.foo = _require;
+```
+
+#### require() call as the object node in a member expression
+
+```diff
+-var foo = require("bar").foo;
++import _require from "bar";
++var foo = _require.foo;
+```
+
+#### require() call happening in a variable declarator
+
+```diff
+-const y = require("./y"), t = require("./t");
++import y from "./y";
++import t from "./t";
+```
+
+### CommonJS exports to ESM export declarations
+
+#### assignment to module.exports
+
+```diff
+-module.exports = foo;
++const module = { exports: {} };
++const exports = module.exports;
++module.exports = foo;
++export default module.exports;
+```
+
+#### assignment to exports
+
+```diff
+-exports = foo;
++const module = { exports: {} };
++const exports = module.exports;
++module.exports = foo;
++export default module.exports;
+```
+
+#### direct named export
+
+```diff
+-module.exports.bar = foo;
++const module = { exports: {} };
++const exports = module.exports;
++module.exports.bar = foo;
++export { foo as bar };
++export default module.exports;
+```
+
+#### indirect named export
+
+```diff
+-var foo = module.exports = bar;
+-foo.bar = bar;
++const module = { exports: {} };
++const exports = module.exports;
++var foo = module.exports = bar;
++foo.bar = bar;
++export { bar };
++export default module.exports;
+```
+
+#### named export through factory (pattern #1)
+
+```diff
+-(function(e){e.bar='foo'}).call(this, exports)
++const module = { exports: {} };
++const exports = module.exports;
++(function(e){e.bar='foo'}).call(this, exports)
++export const bar = exports.bar
++export default module.exports;
+```
+
+#### named export through factory (pattern #2)
+
+```diff
+-!function(t){t(exports)}(function(e){e.bar='foo'})
++const module = { exports: {} };
++const exports = module.exports;
++!function(t){t(exports)}(function(e){e.bar='foo'})
++export const bar = exports.bar;
++export default module.exports;
+```
 
 ## Known limitations
-
-### CommonJS support
-
-At the moment, `commonjs` modules are also supported but only the default export is made available to consumers (e.g. the value assigned to `module.exports`).
-
-If a commonjs module has multiple named exports, you'll have to access them as properties of the default export, e.g.:
-
-```javascript
-import myModule from "myModule";
-
-// Same as invoking module.exports.bar() on the server side.
-myModule.bar();
-```
-
-In version `1.1.0`, basic support for UMD CommonJS named exports was added.
-So, if the requested module is packaged as a `UMD` module, it will be possible to do:
-
-**my-app/node_modules/umd-module/index.js**
-
-```javascript
-// let's pretend this is an hypothetical npm package's entry point
-!(function(t) {
-  t(exports);
-})(function(e) {
-  e.bar = "foo";
-});
-```
-
-**my-app/src/app.js**
-
-```javascript
-// in your source code, you can now import "bar" as a named import:
-import { bar } from "umd-module";
-
-// you can still use the default export though, it will always
-// be made available for backward compatibility
-import umdModule from "umd-module";
-
-// both will print the same thing
-console.log(umdModule.bar === bar); // will print true
-```
 
 ### `<script>` tags
 
