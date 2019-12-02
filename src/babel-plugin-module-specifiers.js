@@ -110,11 +110,20 @@ function resolveInvalidModuleSpecifier(source, nodeModulesRoot) {
  * if no valid specifiers could be located.
  */
 function resolveModule(source, currentModuleDir, config) {
+  if (
+    source.startsWith(config.nodeModulesPublicPath) &&
+    fs.existsSync(
+      source.replace(config.nodeModulesPublicPath, config.nodeModulesRoot)
+    )
+  ) {
+    // Module source was already processed.
+    return source;
+  }
   if (MODULE_SPECIFIER_PATTERN.test(source)) {
     return resolveValidModuleSpecifier(source, currentModuleDir);
   }
   const p = resolveInvalidModuleSpecifier(source, config.nodeModulesRoot);
-  if (p !== null) {
+  if (p !== null && p.startsWith(config.nodeModulesRoot)) {
     return p.replace(config.nodeModulesRoot, config.nodeModulesPublicPath);
   }
   return null;

@@ -481,6 +481,33 @@ describe("import specifiers", () => {
       '"import foo from \\"/node_modules/foo/index.js\\";"'
     );
   });
+
+  test("nodeModulesRoot !== nodeModulesPublicPath", async () => {
+    fs.__setFiles(
+      {
+        path: "/index.js",
+        content: `
+          var getLength = Buffer.byteLength.bind(Buffer);
+        `
+      },
+      {
+        path: "/node_modules/buffer/index.js",
+        content: "module.exports = 'buffer';"
+      }
+    );
+    const app = express();
+    app.use(
+      esm("/", {
+        nodeModulesRoot: "/node_modules",
+        nodeModulesPublicPath: "/foo"
+      })
+    );
+    const res = await request(app).get("/index.js");
+    expect(res.text).toMatchInlineSnapshot(`
+      "import { Buffer } from \\"/foo/buffer/index.js\\";
+      var getLength = Buffer.byteLength.bind(Buffer);"
+    `);
+  });
 });
 
 describe("imports", () => {
