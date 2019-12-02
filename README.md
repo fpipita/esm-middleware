@@ -240,14 +240,38 @@ The following sections show some of the CommonJS patterns that are recognized by
 
 ## Node globals
 
-Node globals are injected by importing them from the `node-libs-browser` package, which has to be provided as a **peer dependency** to `esm-middleware`.
+Node globals support relies on the libraries listed in the `node-libs-browser` package, which has to be provided as a **peer dependency** to `esm-middleware`.
 
-At the moment, the only recognized global is `Buffer`, which is processed as follows:
+When a Node global is referenced, `esm-middleware` automatically injects an ESM import declaration for the referenced global into the module scope.
+
+At the moment, the only recognized global is `Buffer`, which is provided through the `buffer` package:
 
 ```diff
 -var getLength = Buffer.byteLength.bind(Buffer);
 +import { Buffer } from "buffer";
 +var getLength = Buffer.byteLength.bind(Buffer);
+```
+
+The Node `global` global is also **automatically injected** in the module scope if it is referenced.
+
+### Node core modules
+
+Support for Node core modules works in a similar way to Node globals.
+
+It basically relies on the existence of a browser implementation of the requested module.
+
+If the browser implementation exists, all you need to do is to list it among your package dependencies.
+
+For example, if your package depends on the `events` module,
+
+```javascript
+import { EventEmitter } from "events";
+```
+
+all you need to do to make it work with `esm-middleware` is:
+
+```bash
+user@localhost:~$ yarn add events
 ```
 
 ## Known limitations
@@ -290,16 +314,6 @@ import foo from "foo";
 ```
 
 that is, make sure your app's entry point gets loaded through the `src` attribute of a `script` tag.
-
-### Node core modules
-
-Node code modules are not supported at the moment, so doing something like:
-
-```javascript
-import EventEmitter from "events";
-```
-
-won't just work.
 
 ## Contributing
 
