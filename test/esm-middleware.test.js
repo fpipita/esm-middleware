@@ -1280,6 +1280,32 @@ describe("named exports", () => {
       export default module.exports;"
     `);
   });
+
+  test("indirect reference happening at arbitrary depth", async () => {
+    fs.__setFiles({
+      path: "/index.js",
+      content: `
+        var foo = exports;
+        var bar = foo;
+        bar.ok = ok;
+      `
+    });
+
+    const app = express();
+    app.use(esm("/"));
+    const res = await request(app).get("/index.js");
+    expect(res.text).toMatchInlineSnapshot(`
+      "const module = {
+        exports: {}
+      };
+      const exports = module.exports;
+      var foo = exports;
+      var bar = foo;
+      bar.ok = ok;
+      export { ok };
+      export default module.exports;"
+    `);
+  });
 });
 
 describe("Node globals", () => {

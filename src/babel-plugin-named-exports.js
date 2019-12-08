@@ -61,7 +61,13 @@ function isExportsBinding(path) {
      * var assert = **module.exports = ok**;
      */
     const p3 = p2.get("init");
-    return searchInAssignmentExpression(p3);
+    if (p3.isExpression()) {
+      const found = searchInAssignmentExpression(p3);
+      if (found) {
+        return true;
+      }
+      return isExportsBinding(p3);
+    }
   }
   for (const p4 of b1.referencePaths) {
     if (p4.parentPath.isAssignmentExpression()) {
