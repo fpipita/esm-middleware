@@ -1,5 +1,5 @@
 const t = require("@babel/types");
-const { hoist } = require("./common");
+const { hoist } = require("./helpers");
 
 /**
  * The require() call is part of an expression.

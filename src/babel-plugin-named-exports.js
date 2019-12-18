@@ -1,87 +1,11 @@
+const { isExportsBinding } = require("./helpers");
+
 const t = require("@babel/types");
 
 /**
- * @param {babel.NodePath<any>} path
- * @returns {boolean}
- */
-function searchInAssignmentExpression(path) {
-  if (path.isMemberExpression()) {
-    path = /** @type {babel.NodePath} */ (path.get("property"));
-  }
-  if (path.isIdentifier({ name: "exports" })) {
-    return true;
-  }
-  if (path.isAssignmentExpression()) {
-    const found = searchInAssignmentExpression(path.get("left"));
-    if (found) {
-      return true;
-    }
-    return searchInAssignmentExpression(path.get("right"));
-  }
-  return false;
-}
-
-/**
- * @param {babel.NodePath} path
- * @returns {boolean} `true` if `path` is a direct or indirect
- * reference to `exports`, e.g.
- *
- * ```javascript
- * // `exports` is an `exports` direct reference
- * exports.foo = 'bar';
- *
- * // assert and ok are references to `exports`
- * var assert = module.exports = ok;
- *
- * // `foo` is an indirect reference to `exports`
- * module.exports = foo;
- * ```
- */
-function isExportsBinding(path) {
-  if (path.isIdentifier({ name: "exports" })) {
-    return true;
-  }
-  const p1 = /** @type {babel.NodePath} */ (path.get("property"));
-  if (path.isMemberExpression() && p1.isIdentifier({ name: "exports" })) {
-    return true;
-  }
-  if (!path.isIdentifier()) {
-    return false;
-  }
-  const b1 = path.scope.getBinding(path.node.name);
-  if (!b1) {
-    return false;
-  }
-  /**
-   * **var assert = module.exports = ok**;
-   */
-  const p2 = b1.path;
-  if (p2.isVariableDeclarator()) {
-    /**
-     * var assert = **module.exports = ok**;
-     */
-    const p3 = p2.get("init");
-    if (p3.isExpression()) {
-      const found = searchInAssignmentExpression(p3);
-      if (found) {
-        return true;
-      }
-      return isExportsBinding(p3);
-    }
-  }
-  for (const p4 of b1.referencePaths) {
-    if (p4.parentPath.isAssignmentExpression()) {
-      const found = searchInAssignmentExpression(p4.parentPath);
-      if (found) {
-        return true;
-      }
-    }
-  }
-  return false;
-}
-
-/**
- * This plugin handles a top level assignment to `module.exports`.
+ * This plugin handles a top level assignment to `module.exports`
+ * when the `right` node of the assignment expression is an
+ * `identifier.
  *
  * Assignment can be direct:
  *

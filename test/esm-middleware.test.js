@@ -654,6 +654,44 @@ describe("imports", () => {
       var _rules = [['normalize', _require]];"
     `);
   });
+
+  test("named imports", async () => {
+    fs.__setFiles(
+      {
+        path: "/index.js",
+        content: `
+          const { foo, bar, defaults } = require("./helpers.js");
+        `
+      },
+      {
+        path: "/helpers.js",
+        content: `
+          module.exports = {foo, bar, defaults: getDefaults()};
+        `
+      }
+    );
+    const app = express();
+    app.use(esm("/"));
+    const r1 = await request(app).get("/index.js");
+    expect(r1.text).toMatchInlineSnapshot(
+      '"import { foo, bar, defaults } from \\"./helpers.js\\";"'
+    );
+    const r2 = await request(app).get("/helpers.js");
+    expect(r2.text).toMatchInlineSnapshot(`
+      "const module = {
+        exports: {}
+      };
+      const exports = module.exports;
+      module.exports = {
+        foo,
+        bar,
+        defaults: getDefaults()
+      };
+      export const defaults = module.exports.defaults;
+      export { foo, bar };
+      export default module.exports;"
+    `);
+  });
 });
 
 describe("default exports", () => {
@@ -861,6 +899,7 @@ describe("default exports", () => {
         \\"default\\": _require,
         __esModule: true
       };
+      export const __esModule = module.exports.__esModule;
       export default module.exports;"
     `);
   });

@@ -170,6 +170,13 @@ The following sections show some of the CommonJS patterns that are recognized by
 +import t from "./t";
 ```
 
+#### require() call with destructuring pattern
+
+```diff
+-const { x, y } = require("./z");
++import { x, y } from "./z";
+```
+
 ### CommonJS exports to ESM export declarations
 
 #### assignment to module.exports
@@ -201,6 +208,15 @@ The following sections show some of the CommonJS patterns that are recognized by
 +module.exports.bar = foo;
 +export { foo as bar };
 +export default module.exports;
+```
+
+#### module.exports = object expression
+
+```diff
+-module.exports = { foo, bar, baz: getBaz() };
++module.exports = { foo, bar, baz: getBaz() };
++export { foo, bar };
++export const baz = module.exports.baz;
 ```
 
 #### indirect named export

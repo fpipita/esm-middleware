@@ -1,5 +1,5 @@
 const t = require("@babel/types");
-const { hoist } = require("./common");
+const { hoist } = require("./helpers");
 
 /**
  * @param {babel.NodePath} path
@@ -26,7 +26,8 @@ function isDuplicateImport(path, localName) {
 
 /**
  * This plugin handles a `require()` call expression happening
- * as the init node in a variable declarator:
+ * as the init node in a variable declarator, where the variable
+ * declarator's `id` node is an `identifier`:
  *
  * ```diff
  * -const y = require("./y"), t = require("./t");
@@ -50,9 +51,10 @@ module.exports = () => ({
       if (!p2.isVariableDeclarator()) {
         return;
       }
-      const p3 = /** @type {babel.NodePath<babel.types.Identifier>} */ (path.parentPath.get(
-        "id"
-      ));
+      const p3 = path.parentPath.get("id");
+      if (Array.isArray(p3) || !p3.isIdentifier()) {
+        return;
+      }
       if (isDuplicateImport(path, p3.node.name)) {
         path.parentPath.remove();
         return;

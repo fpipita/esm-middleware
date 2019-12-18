@@ -2,7 +2,7 @@ const crypto = require("crypto");
 const babel = require("@babel/core");
 const path = require("path");
 const fs = require("fs");
-const { JS_FILE_PATTERN } = require("./common");
+const { JS_FILE_PATTERN } = require("./helpers");
 
 /**
  * Babel plugin handbook https://github.com/jamiebuilds/babel-handbook/blob/master/translations/en/plugin-handbook.md
@@ -106,9 +106,11 @@ function esmMiddlewareFactory(root = path.resolve(), options) {
         [require("./babel-plugin-shadow-global-module"), options],
         [require("./babel-plugin-module-specifiers"), options],
         [require("./babel-plugin-named-exports"), options],
+        [require("./babel-plugin-named-exports-object-expression"), options],
         [require("./babel-plugin-named-exports-factory"), options],
         [require("./babel-plugin-named-exports-factory-call"), options],
         [require("./babel-plugin-imports-declaration"), options],
+        [require("./babel-plugin-imports-declaration-object-pattern"), options],
         [require("./babel-plugin-imports-standalone"), options],
         [require("./babel-plugin-imports-expression"), options],
         [require("./babel-plugin-node-globals"), options]

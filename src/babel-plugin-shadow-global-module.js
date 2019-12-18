@@ -1,5 +1,5 @@
 const t = require("@babel/types");
-const { hoist } = require("./common");
+const { hoist } = require("./helpers");
 
 /**
  * This plugin checks whether there are any references left

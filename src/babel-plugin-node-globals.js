@@ -1,5 +1,5 @@
 const t = require("@babel/types");
-const { hoist } = require("./common");
+const { hoist } = require("./helpers");
 
 /**
  * Maps Node globals to browser polyfill package names.

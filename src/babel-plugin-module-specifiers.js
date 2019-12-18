@@ -1,6 +1,6 @@
 const ospath = require("path");
 const fs = require("fs");
-const { JS_FILE_PATTERN } = require("./common");
+const { JS_FILE_PATTERN } = require("./helpers");
 
 const PATH_SEPARATOR_REPLACER = /[/\\]+/g;
 const MODULE_SPECIFIER_PATTERN = /^[./]/;
