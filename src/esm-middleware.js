@@ -167,15 +167,15 @@ function esmMiddlewareFactory(root = path.resolve(), options) {
 
   /** @type {import("express").Handler} */
   function esmMiddleware(req, res, next) {
-    if (req.query.nomodule || !JS_FILE_PATTERN.test(req.url)) {
+    if (!JS_FILE_PATTERN.test(req.path)) {
       return next();
     }
-    const filePath = mapUrlToLocalPath(req.url);
+    const filePath = mapUrlToLocalPath(req.path);
     if (!fs.existsSync(filePath)) {
       return next();
     }
     const content = fs.readFileSync(filePath, { encoding: "utf8" });
-    const code = getCode(filePath, content);
+    const code = req.query.nomodule ? content : getCode(filePath, content);
     if (!code) {
       return next();
     }

@@ -536,6 +536,27 @@ describe("import specifiers", () => {
       '"import fetch from \\"/node_modules/fetch-mock/esm/client.mjs\\";"'
     );
   });
+
+  test("nomodule flag support", async () => {
+    fs.__setFiles(
+      {
+        path: "/index.js",
+        content: 'import "/foo.js?nomodule=true";'
+      },
+      {
+        path: "/foo.js",
+        content: `
+          module.exports = "foo";
+        `
+      }
+    );
+    const app = express();
+    app.use(esm("/", { nodeModulesRoot: "/node_modules" }));
+    const response = await request(app).get("/index.js");
+    expect(response.text).toMatchInlineSnapshot(
+      '"import \\"/foo.js?nomodule=true\\";"'
+    );
+  });
 });
 
 describe("imports", () => {

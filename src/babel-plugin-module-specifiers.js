@@ -144,9 +144,10 @@ function ImportDeclaration(path, state) {
   if (!path.node.source) {
     return;
   }
+  const [pathname, search] = path.node.source.value.split("?");
   const { config, currentModuleAbsolutePath } = state.opts;
   const source = resolveModule(
-    path.node.source.value,
+    pathname,
     ospath.dirname(currentModuleAbsolutePath),
     config
   );
@@ -156,6 +157,9 @@ function ImportDeclaration(path, state) {
     }
   } else {
     path.node.source.value = source.replace(PATH_SEPARATOR_REPLACER, "/");
+    if (search) {
+      path.node.source.value = `${path.node.source.value}?${search}`;
+    }
   }
 }
 
