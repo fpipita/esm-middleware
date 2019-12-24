@@ -256,9 +256,9 @@ The following sections show some of the CommonJS patterns that are recognized by
 
 ## Node globals
 
-Node globals support relies on the libraries listed in the `node-libs-browser` package, which has to be provided as a **peer dependency** to `esm-middleware`.
+Node globals support relies on the existence of a browser implementation of the requested global.
 
-When a Node global is referenced, `esm-middleware` automatically injects an ESM import declaration for the referenced global into the module scope.
+When a Node global is referenced, `esm-middleware` automatically injects an ESM import declaration for the implementing package into the module scope, as long as the package is installed.
 
 At the moment, the only recognized global is `Buffer`, which is provided through the `buffer` package:
 

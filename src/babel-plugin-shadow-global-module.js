@@ -27,6 +27,18 @@ module.exports = () => ({
         ) {
           return;
         }
+        if (!path.scope.hasBinding("exports")) {
+          const node = t.variableDeclaration("const", [
+            t.variableDeclarator(
+              t.identifier("exports"),
+              t.memberExpression(
+                t.identifier("module"),
+                t.identifier("exports")
+              )
+            )
+          ]);
+          hoist(path, node);
+        }
         const mod = t.variableDeclaration("const", [
           t.variableDeclarator(
             t.identifier("module"),
@@ -35,13 +47,7 @@ module.exports = () => ({
             ])
           )
         ]);
-        const exp = t.variableDeclaration("const", [
-          t.variableDeclarator(
-            t.identifier("exports"),
-            t.memberExpression(t.identifier("module"), t.identifier("exports"))
-          )
-        ]);
-        hoist(path, mod, exp);
+        hoist(path, mod);
         if (path.get("body").find(n => n.isExportDefaultDeclaration())) {
           return;
         }
