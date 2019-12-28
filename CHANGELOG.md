@@ -1,3 +1,28 @@
+# [1.5.0](https://github.com/fpipita/esm-middleware/compare/v1.4.4...v1.5.0) (2019-12-28)
+
+### Bug Fixes
+
+- handle arbitrary depth indirect assignments ([62cbded](https://github.com/fpipita/esm-middleware/commit/62cbded423e2f8c0bacf9a083d72ea0c23576fd8))
+- handle export named/all declaration ([b8893ac](https://github.com/fpipita/esm-middleware/commit/b8893acf12f211ad019ebb7e688d0fe2a3b8a288))
+- handle module.exports reference happening on child scope ([c57230a](https://github.com/fpipita/esm-middleware/commit/c57230aaad63de9e7171db62d0b9256f9b58a966))
+- handle nodeModulesRoot !== nodeModulesPublicPath case ([25f53a6](https://github.com/fpipita/esm-middleware/commit/25f53a63d67924eed100b675d41fa8f52212a171))
+- handle one more named export use case ([9fdf470](https://github.com/fpipita/esm-middleware/commit/9fdf4703fc0f72779e01d8d31abe8e80fb14de00))
+- handle require() call as object in member expression ([e42130e](https://github.com/fpipita/esm-middleware/commit/e42130e13de81534a0496d6056ebb2a2a6127a58))
+- handle require() call happening in a generic expression ([410f95c](https://github.com/fpipita/esm-middleware/commit/410f95c48c0648d7702c82a85224a329e006fb9f))
+- make ?nomodule=true work in module sources ([3b06659](https://github.com/fpipita/esm-middleware/commit/3b066594130b7af47ae2dab1c2d5a5806b13bf41))
+- **docs:** add link to Babel homepage ([9a6e8f2](https://github.com/fpipita/esm-middleware/commit/9a6e8f293720beab897591133de868ffd1d6bdbd))
+
+### Features
+
+- add disableCaching flag ([b816fbc](https://github.com/fpipita/esm-middleware/commit/b816fbc01732553aa93ba4fec3fe5cacf49c56c4))
+- add support for browser key in package.json ([8955cb1](https://github.com/fpipita/esm-middleware/commit/8955cb152e8e98482ede5a0cd367675edfd8316c))
+- add support for Node globals ([1c6273a](https://github.com/fpipita/esm-middleware/commit/1c6273ac5c3317fbc230ab18d83e8ad1aaceeae8))
+- handle indirect top level assignment to exports ([4a3b2b2](https://github.com/fpipita/esm-middleware/commit/4a3b2b2fa9e49092421626b2dc10caa810d7a611))
+- improve support for named imports and exports ([b76e66b](https://github.com/fpipita/esm-middleware/commit/b76e66bf5658f31b17e308dacd7af75eed7af4e8))
+- improved named exports support ([48298df](https://github.com/fpipita/esm-middleware/commit/48298df149b02b72e5879facfc275d3e4a02bc7a))
+- inject Node `global` global ([606c56e](https://github.com/fpipita/esm-middleware/commit/606c56e198b92d7429d28857b6b908705ed06a2a))
+- named exports through Function.prototype.call invoked factory ([c9492a4](https://github.com/fpipita/esm-middleware/commit/c9492a4d11e17f463822a0fd4fa7e89e05155922))
+
 ## [1.4.4](https://github.com/fpipita/esm-middleware/compare/v1.4.3...v1.4.4) (2019-11-08)
 
 ### Features
