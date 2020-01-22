@@ -105,6 +105,8 @@ function esmMiddlewareFactory(root = path.resolve(), options) {
     const result = babel.transformSync(content, {
       plugins: [
         require("@babel/plugin-syntax-dynamic-import"),
+        require("@babel/plugin-syntax-nullish-coalescing-operator"),
+        require("@babel/plugin-syntax-optional-chaining"),
         [require("./babel-plugin-shadow-global-module"), options],
         [require("./babel-plugin-module-specifiers"), options],
         [require("./babel-plugin-named-exports"), options],
