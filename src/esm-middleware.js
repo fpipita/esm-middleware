@@ -1,7 +1,6 @@
 const crypto = require("crypto");
 const babel = require("@babel/core");
 const path = require("path");
-const fs = require("fs");
 const { JS_FILE_PATTERN } = require("./helpers");
 
 /**
@@ -46,6 +45,8 @@ const { JS_FILE_PATTERN } = require("./helpers");
  * couldn't be resolved are removed.
  * @property {boolean} [disableCaching=false] if `true`, caching will be
  * disabled and modules will be recompiled on each request.
+ * @property {typeof import("fs")} [_fs] only used for testing purposes,
+ * it is an object implementing the `fs` module interface.
  */
 
 /**
@@ -73,6 +74,7 @@ function esmMiddlewareFactory(root = path.resolve(), options) {
     nodeModulesPublicPath: "/node_modules",
     removeUnresolved: true,
     disableCaching: false,
+    _fs: require("fs"),
     ...options
   };
   if (!finalOptions.root || !path.isAbsolute(finalOptions.root)) {
@@ -102,7 +104,7 @@ function esmMiddlewareFactory(root = path.resolve(), options) {
     };
     const result = babel.transformSync(content, {
       plugins: [
-        require("babel-plugin-syntax-dynamic-import"),
+        require("@babel/plugin-syntax-dynamic-import"),
         [require("./babel-plugin-shadow-global-module"), options],
         [require("./babel-plugin-module-specifiers"), options],
         [require("./babel-plugin-named-exports"), options],
@@ -171,10 +173,12 @@ function esmMiddlewareFactory(root = path.resolve(), options) {
       return next();
     }
     const filePath = mapUrlToLocalPath(req.path);
-    if (!fs.existsSync(filePath)) {
+    if (!finalOptions._fs.existsSync(filePath)) {
       return next();
     }
-    const content = fs.readFileSync(filePath, { encoding: "utf8" });
+    const content = finalOptions._fs.readFileSync(filePath, {
+      encoding: "utf8"
+    });
     const code = req.query.nomodule ? content : getCode(filePath, content);
     if (!code) {
       return next();

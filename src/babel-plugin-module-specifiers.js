@@ -1,5 +1,4 @@
 const ospath = require("path");
-const fs = require("fs");
 const { JS_FILE_PATTERN } = require("./helpers");
 
 const PATH_SEPARATOR_REPLACER = /[/\\]+/g;
@@ -20,13 +19,14 @@ function joinRelativePath(...paths) {
 /**
  * @param {string} source
  * @param {string} currentModuleDir
+ * @param {typeof import("fs")} fs
  * @returns {string | null}
  */
-function resolveValidModuleSpecifier(source, currentModuleDir) {
+function resolveValidModuleSpecifier(source, currentModuleDir, fs) {
   const p = ospath.resolve(currentModuleDir, source);
   if (!fs.existsSync(p)) {
     if (!JS_FILE_PATTERN.test(p)) {
-      return resolveValidModuleSpecifier(source + ".js", currentModuleDir);
+      return resolveValidModuleSpecifier(source + ".js", currentModuleDir, fs);
     }
     return null;
   }
@@ -40,19 +40,21 @@ function resolveValidModuleSpecifier(source, currentModuleDir) {
    * the same basename exists
    */
   return (
-    resolveValidModuleSpecifier(source + ".js", currentModuleDir) ||
+    resolveValidModuleSpecifier(source + ".js", currentModuleDir, fs) ||
     resolveValidModuleSpecifier(
       joinRelativePath(source, "index.js"),
-      currentModuleDir
+      currentModuleDir,
+      fs
     )
   );
 }
 
 /**
  * @param {string} dir
+ * @param {typeof import("fs")} fs
  * @returns {string | null}
  */
-function resolveNodeModuleFromPackageJson(dir) {
+function resolveNodeModuleFromPackageJson(dir, fs) {
   const p = ospath.resolve(dir, "package.json");
   if (!fs.existsSync(p)) {
     return null;
@@ -82,24 +84,26 @@ function resolveNodeModuleFromPackageJson(dir) {
 /**
  * @param {string} source
  * @param {string} nodeModulesRoot
+ * @param {typeof import("fs")} fs
  * @returns {string | null} absolute path to a local script
  * if source could be resolved or null.
  */
-function resolveInvalidModuleSpecifier(source, nodeModulesRoot) {
+function resolveInvalidModuleSpecifier(source, nodeModulesRoot, fs) {
   const p = ospath.resolve(nodeModulesRoot, source);
   if (!fs.existsSync(p)) {
     if (!JS_FILE_PATTERN.test(p)) {
-      return resolveInvalidModuleSpecifier(source + ".js", nodeModulesRoot);
+      return resolveInvalidModuleSpecifier(source + ".js", nodeModulesRoot, fs);
     }
     return null;
   }
   const stat = fs.statSync(p);
   if (stat.isDirectory()) {
     return (
-      resolveNodeModuleFromPackageJson(p) ||
+      resolveNodeModuleFromPackageJson(p, fs) ||
       resolveInvalidModuleSpecifier(
         ospath.join(source, "index.js"),
-        nodeModulesRoot
+        nodeModulesRoot,
+        fs
       )
     );
   }
@@ -119,7 +123,7 @@ function resolveInvalidModuleSpecifier(source, nodeModulesRoot) {
 function resolveModule(source, currentModuleDir, config) {
   if (
     source.startsWith(config.nodeModulesPublicPath) &&
-    fs.existsSync(
+    config._fs.existsSync(
       source.replace(config.nodeModulesPublicPath, config.nodeModulesRoot)
     )
   ) {
@@ -127,9 +131,13 @@ function resolveModule(source, currentModuleDir, config) {
     return source;
   }
   if (MODULE_SPECIFIER_PATTERN.test(source)) {
-    return resolveValidModuleSpecifier(source, currentModuleDir);
+    return resolveValidModuleSpecifier(source, currentModuleDir, config._fs);
   }
-  const p = resolveInvalidModuleSpecifier(source, config.nodeModulesRoot);
+  const p = resolveInvalidModuleSpecifier(
+    source,
+    config.nodeModulesRoot,
+    config._fs
+  );
   if (p !== null && p.startsWith(config.nodeModulesRoot)) {
     return p.replace(config.nodeModulesRoot, config.nodeModulesPublicPath);
   }
