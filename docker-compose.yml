@@ -1,0 +1,9 @@
+version: "3.7"
+services:
+  dev-container:
+    build: .
+    user: node
+    working_dir: /home/node/esm-middleware
+    command: ["/usr/bin/tail", "-f", "/dev/null"]
+    volumes:
+      - ${PWD}:/home/node/esm-middleware

@@ -9,7 +9,7 @@ Serve ES modules from your `node_modules` folder.
 ## Installation
 
 ```
-yarn add @fpipita/esm-middleware
+npm install @fpipita/esm-middleware
 ```
 
 ## Usage
@@ -50,7 +50,7 @@ app.listen(3000, () => console.log("Listening on port 3000"));
 Let's now assume we wanted to use Lodash in our client side code, we first need to install it within our static `node_modules` folder:
 
 ```bash
-user@localhost:~$ yarn add lodash
+user@localhost:~$ npm install lodash
 ```
 
 Then, in our client side code, we would just import Lodash as:
@@ -67,7 +67,7 @@ You can find a minimal working example in the `example` directory.
 After installing the example dependencies, you can run it with:
 
 ```bash
-user@localhost:~$ yarn start
+user@localhost:~$ npm start
 ```
 
 and point your browser to `http://localhost:3000/`.
@@ -287,7 +287,7 @@ import { EventEmitter } from "events";
 all you need to do to make it work with `esm-middleware` is:
 
 ```bash
-user@localhost:~$ yarn add events
+user@localhost:~$ npm install events
 ```
 
 ## Known limitations
@@ -336,5 +336,5 @@ that is, make sure your app's entry point gets loaded through the `src` attribut
 Only a couple guidelines to follow for now:
 
 - Make sure each change which updates the package's behavior comes with some tests demonstrating the updated behavior.
-- Run the `yarn commit` script to commit your changes as it will help produce a propertly formatted commit message which is needed in order to be able to auto-generate a matching changelog entry.
+- Run the `npm run commit` script to commit your changes as it will help produce a propertly formatted commit message which is needed in order to be able to auto-generate a matching changelog entry.
 - Always rebase your changes to the upstream's master branch before to create a pull request, so that we can avoid merge commits and keep the commit history cleaner.
