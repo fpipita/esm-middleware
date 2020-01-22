@@ -1,3 +1,9 @@
+# [1.6.0](https://github.com/fpipita/esm-middleware/compare/v1.5.0...v1.6.0) (2020-01-22)
+
+### Features
+
+- add support for optional chaining and nullish coalescing operator syntaxes ([56a0595](https://github.com/fpipita/esm-middleware/commit/56a0595433b1923676e1b723dfadbd98dde120af))
+
 # [1.5.0](https://github.com/fpipita/esm-middleware/compare/v1.4.4...v1.5.0) (2019-12-28)
 
 ### Bug Fixes
