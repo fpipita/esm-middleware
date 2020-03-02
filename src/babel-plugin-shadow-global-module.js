@@ -51,6 +51,18 @@ module.exports = () => ({
         if (path.get("body").find(n => n.isExportDefaultDeclaration())) {
           return;
         }
+        if (
+          path.get("body").find(n => {
+            if (n.isExportNamedDeclaration() === false) {
+              return false;
+            }
+            return n
+              .get("specifiers")
+              .find(nn => nn.get("exported").node.name === "default");
+          })
+        ) {
+          return;
+        }
         const edd = t.exportDefaultDeclaration(
           t.memberExpression(t.identifier("module"), t.identifier("exports"))
         );

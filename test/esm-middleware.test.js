@@ -1118,6 +1118,33 @@ describe("default exports", () => {
       export default module.exports;"
     `);
   });
+
+  test("use case from uuid (duplicate default export)", async () => {
+    const app = express();
+    app.use(
+      esm("/", {
+        _fs: new FsMock({
+          path: "/uuid.js",
+          content: `
+            var _default = v4;
+            exports.default = _default;
+            module.exports = exports.default;
+          `
+        })
+      })
+    );
+    const res = await request(app).get("/uuid.js");
+    expect(res.text).toMatchInlineSnapshot(`
+"const module = {
+  exports: {}
+};
+const exports = module.exports;
+var _default = v4;
+exports.default = _default;
+module.exports = exports.default;
+export { _default as default };"
+`);
+  });
 });
 
 describe("named exports", () => {
