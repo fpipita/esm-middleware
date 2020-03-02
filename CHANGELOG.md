@@ -1,3 +1,9 @@
+## [1.6.1](https://github.com/fpipita/esm-middleware/compare/v1.6.0...v1.6.1) (2020-03-02)
+
+### Bug Fixes
+
+- prevent duplicate default export ([6c06494](https://github.com/fpipita/esm-middleware/commit/6c06494c92d352bfe0cd45dcbe06a5ddb543e90c))
+
 # [1.6.0](https://github.com/fpipita/esm-middleware/compare/v1.5.0...v1.6.0) (2020-01-22)
 
 ### Features
