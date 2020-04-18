@@ -59,8 +59,7 @@ module.exports = () => ({
         /**
          * **(function(e){e.bar='foo'}).call**(this, exports)
          */
-        const p5 =
-          /** @type {babel.NodePath<babel.types.MemberExpression>} */ (p7.parentPath);
+        const p5 = /** @type {babel.NodePath<babel.types.MemberExpression>} */ (p7.parentPath);
         /**
          * (function(e){e.bar='foo'}).**call**(this, exports)
          */
@@ -87,7 +86,7 @@ module.exports = () => ({
                 state.found = true;
                 path.stop();
               }
-            }
+            },
           },
           state
         );
@@ -106,13 +105,13 @@ module.exports = () => ({
               t.variableDeclarator(
                 p2.node,
                 t.memberExpression(t.identifier("exports"), p2.node)
-              )
+              ),
             ]),
             [t.exportSpecifier(p2.node, p2.node)]
           );
           program.pushContainer("body", node);
         }
-      }
-    }
-  }
+      },
+    },
+  },
 });

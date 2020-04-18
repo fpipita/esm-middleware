@@ -30,6 +30,6 @@ module.exports = () => ({
       const node = t.importDeclaration([], p1.node);
       hoist(path, node);
       path.remove();
-    }
-  }
+    },
+  },
 });

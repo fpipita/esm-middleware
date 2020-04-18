@@ -44,6 +44,6 @@ module.exports = () => ({
       const node = t.importDeclaration(specifiers, p1.node);
       hoist(path, node);
       path.parentPath.remove();
-    }
-  }
+    },
+  },
 });

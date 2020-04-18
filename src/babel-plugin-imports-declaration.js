@@ -65,6 +65,6 @@ module.exports = () => ({
       );
       hoist(path, node);
       path.parentPath.remove();
-    }
-  }
+    },
+  },
 });

@@ -17,7 +17,7 @@ class FsMock {
   _findFile(
     path,
     found = () => {},
-    notFound = path => {
+    notFound = (path) => {
       const error = new Error(`${path}: file not found`);
       error.code = "ENOENT";
       throw error;
@@ -27,7 +27,7 @@ class FsMock {
     if (typeof content !== "undefined") {
       return found({ path, content });
     }
-    const dir = [...this._files.entries()].find(entry => {
+    const dir = [...this._files.entries()].find((entry) => {
       return parse(entry[0]).dir === path;
     });
     if (dir) {
@@ -37,7 +37,7 @@ class FsMock {
   }
 
   readFileSync(path) {
-    return this._findFile(path, file => file.content);
+    return this._findFile(path, (file) => file.content);
   }
 
   existsSync(path) {
@@ -49,9 +49,9 @@ class FsMock {
   }
 
   statSync(path) {
-    return this._findFile(path, entry => ({
+    return this._findFile(path, (entry) => ({
       isFile: () => !entry.dir,
-      isDirectory: () => entry.dir
+      isDirectory: () => entry.dir,
     }));
   }
 }

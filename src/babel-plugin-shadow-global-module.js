@@ -35,7 +35,7 @@ module.exports = () => ({
                 t.identifier("module"),
                 t.identifier("exports")
               )
-            )
+            ),
           ]);
           hoist(path, node);
         }
@@ -43,22 +43,22 @@ module.exports = () => ({
           t.variableDeclarator(
             t.identifier("module"),
             t.objectExpression([
-              t.objectProperty(t.identifier("exports"), t.objectExpression([]))
+              t.objectProperty(t.identifier("exports"), t.objectExpression([])),
             ])
-          )
+          ),
         ]);
         hoist(path, mod);
-        if (path.get("body").find(n => n.isExportDefaultDeclaration())) {
+        if (path.get("body").find((n) => n.isExportDefaultDeclaration())) {
           return;
         }
         if (
-          path.get("body").find(n => {
+          path.get("body").find((n) => {
             if (n.isExportNamedDeclaration() === false) {
               return false;
             }
             return n
               .get("specifiers")
-              .find(nn => nn.get("exported").node.name === "default");
+              .find((nn) => nn.get("exported").node.name === "default");
           })
         ) {
           return;
@@ -67,7 +67,7 @@ module.exports = () => ({
           t.memberExpression(t.identifier("module"), t.identifier("exports"))
         );
         path.pushContainer("body", edd);
-      }
-    }
-  }
+      },
+    },
+  },
 });

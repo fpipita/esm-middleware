@@ -30,7 +30,7 @@ module.exports = () => ({
   visitor: {
     AssignmentExpression: {
       exit(path) {
-        if (path.findParent(parent => parent.isBlockStatement())) {
+        if (path.findParent((parent) => parent.isBlockStatement())) {
           return;
         }
         /**
@@ -63,10 +63,10 @@ module.exports = () => ({
         }
 
         const node = t.exportNamedDeclaration(null, [
-          t.exportSpecifier(p3.node, p4.node)
+          t.exportSpecifier(p3.node, p4.node),
         ]);
         path.scope.getProgramParent().path.pushContainer("body", node);
-      }
-    }
-  }
+      },
+    },
+  },
 });

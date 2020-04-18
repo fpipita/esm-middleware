@@ -5,8 +5,8 @@ document.body.innerHTML = /* HTML */ `
     <h1>esm-middleware example</h1>
     Sum A and B using the Lodash's sum method
   </div>
-  <label for="op1">A<input type="number" id="op1"/></label>
-  <label for="op2">B<input type="number" id="op2"/></label>
+  <label for="op1">A<input type="number" id="op1" /></label>
+  <label for="op2">B<input type="number" id="op2" /></label>
   <div id="result">A + B = <span id="sum"></span></div>
 `;
 

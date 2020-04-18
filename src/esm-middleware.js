@@ -75,7 +75,7 @@ function esmMiddlewareFactory(root = path.resolve(), options) {
     removeUnresolved: true,
     disableCaching: false,
     _fs: require("fs"),
-    ...options
+    ...options,
   };
   if (!finalOptions.root || !path.isAbsolute(finalOptions.root)) {
     throw new TypeError("root: absolute path expected");
@@ -100,7 +100,7 @@ function esmMiddlewareFactory(root = path.resolve(), options) {
     }
     const options = {
       currentModuleAbsolutePath: filePath,
-      config: finalOptions
+      config: finalOptions,
     };
     const result = babel.transformSync(content, {
       plugins: [
@@ -117,8 +117,8 @@ function esmMiddlewareFactory(root = path.resolve(), options) {
         [require("./babel-plugin-imports-declaration-object-pattern"), options],
         [require("./babel-plugin-imports-standalone"), options],
         [require("./babel-plugin-imports-expression"), options],
-        [require("./babel-plugin-node-globals"), options]
-      ]
+        [require("./babel-plugin-node-globals"), options],
+      ],
     });
     if (result && result.code) {
       return result.code;
@@ -135,10 +135,7 @@ function esmMiddlewareFactory(root = path.resolve(), options) {
     if (finalOptions.disableCaching) {
       return transform(filePath, content);
     }
-    const hash = crypto
-      .createHash("md5")
-      .update(content)
-      .digest("hex");
+    const hash = crypto.createHash("md5").update(content).digest("hex");
     const cachedCode = cache.get(filePath);
     if (typeof cachedCode !== "undefined" && cachedCode.hash === hash) {
       return cachedCode.code;
@@ -179,7 +176,7 @@ function esmMiddlewareFactory(root = path.resolve(), options) {
       return next();
     }
     const content = finalOptions._fs.readFileSync(filePath, {
-      encoding: "utf8"
+      encoding: "utf8",
     });
     const code = req.query.nomodule ? content : getCode(filePath, content);
     if (!code) {

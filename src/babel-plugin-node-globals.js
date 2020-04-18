@@ -22,7 +22,10 @@ module.exports = () => ({
       for (const global of Object.keys(path.scope.globals)) {
         if (global === "global") {
           const node = t.variableDeclaration("const", [
-            t.variableDeclarator(t.identifier("global"), t.objectExpression([]))
+            t.variableDeclarator(
+              t.identifier("global"),
+              t.objectExpression([])
+            ),
           ]);
           hoist(path, node);
         } else {
@@ -36,6 +39,6 @@ module.exports = () => ({
           }
         }
       }
-    }
-  }
+    },
+  },
 });

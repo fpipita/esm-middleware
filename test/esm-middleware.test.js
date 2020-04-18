@@ -12,17 +12,17 @@ describe("middleware misc", () => {
         _fs: new FsMock(
           {
             path: "/client/app.js",
-            content: "import { createStore } from 'redux';"
+            content: "import { createStore } from 'redux';",
           },
           {
             path: "/node_modules/redux/package.json",
-            content: JSON.stringify({ module: "es/index.js" })
+            content: JSON.stringify({ module: "es/index.js" }),
           },
           {
             path: "/node_modules/redux/es/index.js",
-            content: "export const createStore = () => {};"
+            content: "export const createStore = () => {};",
           }
-        )
+        ),
       })
     );
     const response = await request(app).get("/client/app.js");
@@ -36,15 +36,15 @@ describe("middleware misc", () => {
     const fs = new FsMock(
       {
         path: "/client/app.js",
-        content: 'import foo from "foo";'
+        content: 'import foo from "foo";',
       },
       {
         path: "/node_modules/foo/package.json",
-        content: JSON.stringify({ "jsnext:main": "es/index.js" })
+        content: JSON.stringify({ "jsnext:main": "es/index.js" }),
       },
       {
         path: "/node_modules/foo/es/index.js",
-        content: "export default 'foo';"
+        content: "export default 'foo';",
       }
     );
     const app = express();
@@ -54,15 +54,15 @@ describe("middleware misc", () => {
     fs._setFiles(
       {
         path: "/client/app.js",
-        content: 'import bar from "bar";'
+        content: 'import bar from "bar";',
       },
       {
         path: "/node_modules/bar/package.json",
-        content: JSON.stringify({ "jsnext:main": "es/index.js" })
+        content: JSON.stringify({ "jsnext:main": "es/index.js" }),
       },
       {
         path: "/node_modules/bar/es/index.js",
-        content: "export default 'bar';"
+        content: "export default 'bar';",
       }
     );
 
@@ -103,17 +103,17 @@ describe("import specifiers", () => {
         _fs: new FsMock(
           {
             path: "/client/app.js",
-            content: 'import foo from "foo";'
+            content: 'import foo from "foo";',
           },
           {
             path: "/node_modules/foo/package.json",
-            content: JSON.stringify({ module: "es/index.js" })
+            content: JSON.stringify({ module: "es/index.js" }),
           },
           {
             path: "/node_modules/foo/es/index.js",
-            content: "export default 'foo';"
+            content: "export default 'foo';",
           }
-        )
+        ),
       })
     );
     const response = await request(app).get("/client/app.js");
@@ -131,17 +131,17 @@ describe("import specifiers", () => {
         _fs: new FsMock(
           {
             path: "/client/app.js",
-            content: 'import foo from "foo";'
+            content: 'import foo from "foo";',
           },
           {
             path: "/node_modules/foo/package.json",
-            content: JSON.stringify({ "jsnext:main": "es/index.js" })
+            content: JSON.stringify({ "jsnext:main": "es/index.js" }),
           },
           {
             path: "/node_modules/foo/es/index.js",
-            content: "export default 'foo';"
+            content: "export default 'foo';",
           }
-        )
+        ),
       })
     );
     const response = await request(app).get("/client/app.js");
@@ -159,13 +159,13 @@ describe("import specifiers", () => {
         _fs: new FsMock(
           {
             path: "/client/app.js",
-            content: 'import foo from "@foo/foo.js";'
+            content: 'import foo from "@foo/foo.js";',
           },
           {
             path: "/node_modules/@foo/foo.js",
-            content: "console.log('cool')"
+            content: "console.log('cool')",
           }
-        )
+        ),
       })
     );
     const response = await request(app).get("/client/app.js");
@@ -183,17 +183,17 @@ describe("import specifiers", () => {
         _fs: new FsMock(
           {
             path: "/client/app.js",
-            content: 'import foo from "foo"; export { foo };'
+            content: 'import foo from "foo"; export { foo };',
           },
           {
             path: "/node_modules/foo/package.json",
-            content: JSON.stringify({ module: "es/index.js" })
+            content: JSON.stringify({ module: "es/index.js" }),
           },
           {
             path: "/node_modules/foo/es/index.js",
-            content: "export default 'foo';"
+            content: "export default 'foo';",
           }
-        )
+        ),
       })
     );
     const response = await request(app).get("/client/app.js");
@@ -212,13 +212,13 @@ describe("import specifiers", () => {
         _fs: new FsMock(
           {
             path: "/client/app.js",
-            content: 'import foo from "@foo/foo";'
+            content: 'import foo from "@foo/foo";',
           },
           {
             path: "/node_modules/@foo/foo.js",
-            content: "console.log('javascript is cool!')"
+            content: "console.log('javascript is cool!')",
           }
-        )
+        ),
       })
     );
     const response = await request(app).get("/client/app.js");
@@ -236,13 +236,13 @@ describe("import specifiers", () => {
         _fs: new FsMock(
           {
             path: "/client/app.js",
-            content: 'import foo from "./foo";'
+            content: 'import foo from "./foo";',
           },
           {
             path: "/client/foo.js",
-            content: "console.log('javascript is cool!')"
+            content: "console.log('javascript is cool!')",
           }
-        )
+        ),
       })
     );
     const response = await request(app).get("/client/app.js");
@@ -260,13 +260,13 @@ describe("import specifiers", () => {
         _fs: new FsMock(
           {
             path: "/client/app.js",
-            content: 'import foo from "./foo";'
+            content: 'import foo from "./foo";',
           },
           {
             path: "/client/foo/index.js",
-            content: "export default 'foo';"
+            content: "export default 'foo';",
           }
-        )
+        ),
       })
     );
     const response = await request(app).get("/client/app.js");
@@ -283,17 +283,17 @@ describe("import specifiers", () => {
         _fs: new FsMock(
           {
             path: "/client/app.js",
-            content: 'import foo from "./foo";'
+            content: 'import foo from "./foo";',
           },
           {
             path: "/client/foo/index.js",
-            content: "export default 'foo';"
+            content: "export default 'foo';",
           },
           {
             path: "/client/foo.js",
-            content: "export default 'bar';"
+            content: "export default 'bar';",
           }
-        )
+        ),
       })
     );
     const response = await request(app).get("/client/app.js");
@@ -309,13 +309,13 @@ describe("import specifiers", () => {
         _fs: new FsMock(
           {
             path: "/index.js",
-            content: "export * from './api'"
+            content: "export * from './api'",
           },
           {
             path: "/api.js",
-            content: "export const api = 'api';"
+            content: "export const api = 'api';",
           }
-        )
+        ),
       })
     );
     const res = await request(app).get("/index.js");
@@ -329,13 +329,13 @@ describe("import specifiers", () => {
         _fs: new FsMock(
           {
             path: "/index.js",
-            content: "export { api } from './api'"
+            content: "export { api } from './api'",
           },
           {
             path: "/api.js",
-            content: "export const api = 'api';"
+            content: "export const api = 'api';",
           }
-        )
+        ),
       })
     );
     const res = await request(app).get("/index.js");
@@ -352,8 +352,8 @@ describe("import specifiers", () => {
         rootPublicPath: "/app/src",
         _fs: new FsMock({
           path: "/app/src/app.js",
-          content: "export default 'foo';"
-        })
+          content: "export default 'foo';",
+        }),
       })
     );
     const res = await request(app).get("/app/src/app.js");
@@ -370,13 +370,13 @@ describe("import specifiers", () => {
         _fs: new FsMock(
           {
             path: "/home/user/app/src/app.js",
-            content: "import bar from 'bar'"
+            content: "import bar from 'bar'",
           },
           {
             path: "/home/user/app/node_modules/bar/index.js",
-            content: "export default 'bar';"
+            content: "export default 'bar';",
           }
-        )
+        ),
       })
     );
     const res = await request(app).get("/app.js");
@@ -394,17 +394,17 @@ describe("import specifiers", () => {
         _fs: new FsMock(
           {
             path: "/app/src/app.js",
-            content: 'import foo from "foo";'
+            content: 'import foo from "foo";',
           },
           {
             path: "/app/node_modules/foo/package.json",
-            content: JSON.stringify({ module: "es/index.js" })
+            content: JSON.stringify({ module: "es/index.js" }),
           },
           {
             path: "/app/node_modules/foo/es/index.js",
-            content: "export default 'foo';"
+            content: "export default 'foo';",
           }
-        )
+        ),
       })
     );
     const response = await request(app).get("/app.js");
@@ -421,8 +421,8 @@ describe("import specifiers", () => {
         nodeModulesRoot: "/app/node_modules",
         _fs: new FsMock({
           path: "/app/node_modules/foo/dist/index.js",
-          content: "export default 'foo';"
-        })
+          content: "export default 'foo';",
+        }),
       })
     );
     const res = await request(app).get("/node_modules/foo/dist/index.js");
@@ -438,13 +438,13 @@ describe("import specifiers", () => {
         _fs: new FsMock(
           {
             path: "/app/src/app.js",
-            content: "export default 'foo';"
+            content: "export default 'foo';",
           },
           {
             path: "/bar.js",
-            content: "export default 'bar';"
+            content: "export default 'bar';",
           }
-        )
+        ),
       })
     );
     const res = await request(app).get("/bar.js");
@@ -462,13 +462,13 @@ describe("import specifiers", () => {
             content: `
           import "./foo.less";
           import bar from "./bar";
-        `
+        `,
           },
           {
             path: "/client/bar.js",
-            content: ""
+            content: "",
           }
-        )
+        ),
       })
     );
     const response = await request(app).get("/client/app.js");
@@ -488,19 +488,19 @@ describe("import specifiers", () => {
             content: `
           import 'animate.css';
           export default "bar";
-        `
+        `,
           },
           {
             path: "/node_modules/animate.css/package.json",
             content: JSON.stringify({
-              main: "./animate.css"
-            })
+              main: "./animate.css",
+            }),
           },
           {
             path: "/node_modules/animate.css/animate.css",
-            content: "#foo {}"
+            content: "#foo {}",
           }
-        )
+        ),
       })
     );
     const response = await request(app).get("/client/app.js");
@@ -514,8 +514,8 @@ describe("import specifiers", () => {
         removeUnresolved: false,
         _fs: new FsMock({
           path: "/my-app/src/index.js",
-          content: "import './bootstrap.css'"
-        })
+          content: "import './bootstrap.css'",
+        }),
       })
     );
     const res = await request(app).get("/index.js");
@@ -531,17 +531,17 @@ describe("import specifiers", () => {
         _fs: new FsMock(
           {
             path: "/app.js",
-            content: "import foo from 'foo';"
+            content: "import foo from 'foo';",
           },
           {
             path: "/node_modules/foo/index.js",
-            content: "module.exports = 'foo';"
+            content: "module.exports = 'foo';",
           },
           {
             path: "/node_modules/foo/package.json",
-            content: JSON.stringify({ main: "./index" })
+            content: JSON.stringify({ main: "./index" }),
           }
-        )
+        ),
       })
     );
     const r1 = await request(app).get("/app.js");
@@ -561,13 +561,13 @@ describe("import specifiers", () => {
             path: "/index.js",
             content: `
               var getLength = Buffer.byteLength.bind(Buffer);
-            `
+            `,
           },
           {
             path: "/node_modules/buffer/index.js",
-            content: "module.exports = 'buffer';"
+            content: "module.exports = 'buffer';",
           }
-        )
+        ),
       })
     );
     const res = await request(app).get("/index.js");
@@ -585,21 +585,21 @@ describe("import specifiers", () => {
         _fs: new FsMock(
           {
             path: "/app.js",
-            content: 'import fetch from "fetch-mock";'
+            content: 'import fetch from "fetch-mock";',
           },
           {
             path: "/node_modules/fetch-mock/package.json",
             content: JSON.stringify({
               main: "./cjs/server.js",
               browser: "./esm/client.mjs",
-              module: "./esm/server.mjs"
-            })
+              module: "./esm/server.mjs",
+            }),
           },
           {
             path: "/node_modules/fetch-mock/esm/client.mjs",
-            content: "export default 'fetch-mock';"
+            content: "export default 'fetch-mock';",
           }
-        )
+        ),
       })
     );
     const response = await request(app).get("/app.js");
@@ -617,15 +617,15 @@ describe("import specifiers", () => {
         _fs: new FsMock(
           {
             path: "/index.js",
-            content: 'import "/foo.js?nomodule=true";'
+            content: 'import "/foo.js?nomodule=true";',
           },
           {
             path: "/foo.js",
             content: `
           module.exports = "foo";
-        `
+        `,
           }
-        )
+        ),
       })
     );
     const response = await request(app).get("/index.js");
@@ -644,13 +644,13 @@ describe("imports", () => {
         _fs: new FsMock(
           {
             path: "/x.js",
-            content: "var y = require('./y'); module.exports = 'x';"
+            content: "var y = require('./y'); module.exports = 'x';",
           },
           {
             path: "/y.js",
-            content: "module.exports = 'y';"
+            content: "module.exports = 'y';",
           }
-        )
+        ),
       })
     );
     const r1 = await request(app).get("/x.js");
@@ -673,17 +673,17 @@ describe("imports", () => {
         _fs: new FsMock(
           {
             path: "/x.js",
-            content: "var y = require('./y'), t = require('./t');"
+            content: "var y = require('./y'), t = require('./t');",
           },
           {
             path: "/y.js",
-            content: "module.exports = 'y';"
+            content: "module.exports = 'y';",
           },
           {
             path: "/t.js",
-            content: "module.exports = 't';"
+            content: "module.exports = 't';",
           }
-        )
+        ),
       })
     );
     const r1 = await request(app).get("/x.js");
@@ -703,13 +703,13 @@ describe("imports", () => {
             content: `
           var utils = require("./utils");
           var utils = require("./utils");
-        `
+        `,
           },
           {
             path: "/utils.js",
-            content: "module.exports = 'utils';"
+            content: "module.exports = 'utils';",
           }
-        )
+        ),
       })
     );
     const res = await request(app).get("/load.js");
@@ -727,13 +727,13 @@ describe("imports", () => {
             path: "/parse_link_destination.js",
             content: `
           var unescapeAll = require('./utils').unescapeAll;
-        `
+        `,
           },
           {
             path: "/utils.js",
-            content: "module.exports = 'utils';"
+            content: "module.exports = 'utils';",
           }
-        )
+        ),
       })
     );
     const res = await request(app).get("/parse_link_destination.js");
@@ -752,13 +752,13 @@ describe("imports", () => {
             path: "/parser_core.js",
             content: `
           var _rules = [['normalize', require('./normalize')]];
-        `
+        `,
           },
           {
             path: "/normalize.js",
-            content: "module.exports = 'normalize';"
+            content: "module.exports = 'normalize';",
           }
-        )
+        ),
       })
     );
     const res = await request(app).get("/parser_core.js");
@@ -777,15 +777,15 @@ describe("imports", () => {
             path: "/index.js",
             content: `
           const { foo, bar, defaults } = require("./helpers.js");
-        `
+        `,
           },
           {
             path: "/helpers.js",
             content: `
           module.exports = {foo, bar, defaults: getDefaults()};
-        `
+        `,
           }
-        )
+        ),
       })
     );
     const r1 = await request(app).get("/index.js");
@@ -819,8 +819,8 @@ describe("default exports", () => {
         _fs: new FsMock({
           path: "/app.js",
           content:
-            "(function(global,factory){module.exports=factory()})(this,function(){});"
-        })
+            "(function(global,factory){module.exports=factory()})(this,function(){});",
+        }),
       })
     );
     const r1 = await request(app).get("/app.js");
@@ -852,8 +852,8 @@ describe("default exports", () => {
           module.exports = function inherits(ctor, superCtor) {
           };
         }
-        `
-        })
+        `,
+        }),
       })
     );
     const res = await request(app).get("/inherits_browser.js");
@@ -884,13 +884,13 @@ describe("default exports", () => {
             content: `
             require('./angular');
             module.exports = angular;
-          `
+          `,
           },
           {
             path: "/node_modules/angular/angular.js",
-            content: ""
+            content: "",
           }
-        )
+        ),
       })
     );
     const response = await request(app).get("/node_modules/angular/index.js");
@@ -916,13 +916,13 @@ describe("default exports", () => {
             content: `
             require('./ui-bootstrap.tpls.js');
             module.exports = "ui.bootstrap";
-          `
+          `,
           },
           {
             path: "/node_modules/ui-bootstrap/ui-bootstrap.tpls.js",
-            content: "module.exports = 'foo';"
+            content: "module.exports = 'foo';",
           }
-        )
+        ),
       })
     );
     const response = await request(app).get(
@@ -949,13 +949,13 @@ describe("default exports", () => {
             path: "/node_modules/foo/index.js",
             content: `
           module.exports = require("./bar");
-        `
+        `,
           },
           {
             path: "/node_modules/foo/bar.js",
-            content: ""
+            content: "",
           }
-        )
+        ),
       })
     );
     const response = await request(app).get("/node_modules/foo/index.js");
@@ -981,17 +981,17 @@ describe("default exports", () => {
             content: `
             require('../../modules/es6.object.keys');
             module.exports = require('../../modules/_core').Object.keys;
-          `
+          `,
           },
           {
             path: "/node_modules/babel-runtime/modules/es6.object.keys.js",
-            content: ""
+            content: "",
           },
           {
             path: "/node_modules/babel-runtime/modules/_core/index.js",
-            content: ""
+            content: "",
           }
-        )
+        ),
       })
     );
     const response = await request(app).get(
@@ -1019,13 +1019,13 @@ describe("default exports", () => {
             path: "/node_modules/babel-runtime/core-js/symbol.js",
             content: `
             module.exports = { "default": require("core-js/library/fn/symbol"), __esModule: true };
-          `
+          `,
           },
           {
             path: "/node_modules/core-js/library/fn/symbol/index.js",
-            content: ""
+            content: "",
           }
-        )
+        ),
       })
     );
     const response = await request(app).get(
@@ -1054,13 +1054,13 @@ describe("default exports", () => {
         _fs: new FsMock(
           {
             path: "/node_modules/foo/index.js",
-            content: "module.exports = require('./bar.json');"
+            content: "module.exports = require('./bar.json');",
           },
           {
             path: "/node_modules/foo/bar.json",
-            content: JSON.stringify({ x: 1 })
+            content: JSON.stringify({ x: 1 }),
           }
-        )
+        ),
       })
     );
     const r1 = await request(app).get("/node_modules/foo/index.js");
@@ -1083,8 +1083,8 @@ describe("default exports", () => {
       esm("/", {
         _fs: new FsMock({
           path: "/assert.js",
-          content: "var assert = module.exports = ok;"
-        })
+          content: "var assert = module.exports = ok;",
+        }),
       })
     );
     const res = await request(app).get("/assert.js");
@@ -1104,8 +1104,8 @@ describe("default exports", () => {
       esm("/", {
         _fs: new FsMock({
           path: "/assert.js",
-          content: "var assert = foo = bar = module.exports = ok;"
-        })
+          content: "var assert = foo = bar = module.exports = ok;",
+        }),
       })
     );
     const res = await request(app).get("/assert.js");
@@ -1129,8 +1129,8 @@ describe("default exports", () => {
             var _default = v4;
             exports.default = _default;
             module.exports = exports.default;
-          `
-        })
+          `,
+        }),
       })
     );
     const res = await request(app).get("/uuid.js");
@@ -1157,8 +1157,8 @@ describe("named exports", () => {
           content: `
         copyProps(buffer, exports)
         exports.Buffer = SafeBuffer
-      `
-        })
+      `,
+        }),
       })
     );
     const res = await request(app).get("/index.js");
@@ -1182,13 +1182,13 @@ describe("named exports", () => {
         _fs: new FsMock(
           {
             path: "/node_modules/foo/index.js",
-            content: "module.exports.encode = require('./encode');"
+            content: "module.exports.encode = require('./encode');",
           },
           {
             path: "/node_modules/foo/encode.js",
-            content: "module.exports = 1"
+            content: "module.exports = 1",
           }
-        )
+        ),
       })
     );
     const response = await request(app).get("/node_modules/foo/index.js");
@@ -1212,13 +1212,13 @@ describe("named exports", () => {
         _fs: new FsMock(
           {
             path: "/node_modules/foo/index.js",
-            content: "exports.Any = require('./properties/Any/regex');"
+            content: "exports.Any = require('./properties/Any/regex');",
           },
           {
             path: "/node_modules/foo/properties/Any/regex.js",
-            content: "module.exports = 1"
+            content: "module.exports = 1",
           }
-        )
+        ),
       })
     );
     const response = await request(app).get("/node_modules/foo/index.js");
@@ -1243,8 +1243,8 @@ describe("named exports", () => {
           path: "/client/index.js",
           content: `
           !function(t){t(exports)}(function(e){e.bar='foo'})
-        `
-        })
+        `,
+        }),
       })
     );
     const response = await request(app).get("/client/index.js");
@@ -1271,8 +1271,8 @@ describe("named exports", () => {
           path: "/assert.js",
           content: `
         module.exports.ok = ok;
-      `
-        })
+      `,
+        }),
       })
     );
     const res = await request(app).get("/assert.js");
@@ -1295,18 +1295,18 @@ describe("named exports", () => {
         _fs: new FsMock(
           {
             path: "/client/app.js",
-            content: 'import foo from "foo";'
+            content: 'import foo from "foo";',
           },
           {
             path: "/node_modules/foo/package.json",
-            content: JSON.stringify({ main: "dist/index.js" })
+            content: JSON.stringify({ main: "dist/index.js" }),
           },
           {
             path: "/node_modules/foo/dist/index.js",
             content:
-              "!function(e,t){t(exports)}(this,function(e){e.foo='bar'});const x=1;"
+              "!function(e,t){t(exports)}(this,function(e){e.foo='bar'});const x=1;",
           }
-        )
+        ),
       })
     );
     const response1 = await request(app).get("/client/app.js");
@@ -1343,8 +1343,8 @@ describe("named exports", () => {
           // export const bar = exports.bar;
           content: `
           !function(t){t(exports)}(function(e){e.bar='foo'})
-        `
-        })
+        `,
+        }),
       })
     );
     const response = await request(app).get("/client/index.js");
@@ -1389,8 +1389,8 @@ describe("named exports", () => {
             value: !0
           });
       });
-        `
-        })
+        `,
+        }),
       })
     );
     const response = await request(app).get("/client/index.js");
@@ -1427,8 +1427,8 @@ describe("named exports", () => {
           var validate = function() {};
           exports.validate = validate;
         }).call(this, typeof exports !== 'undefined' ? exports : null);
-    `
-        })
+    `,
+        }),
       })
     );
     const r1 = await request(app).get("/app.js");
@@ -1456,8 +1456,8 @@ describe("named exports", () => {
           content: `
         var assert = module.exports = ok;
         assert.ok = ok;
-      `
-        })
+      `,
+        }),
       })
     );
     const res = await request(app).get("/assert.js");
@@ -1482,8 +1482,8 @@ describe("named exports", () => {
           content: `
         var assert = exports;
         assert.ok = ok;
-      `
-        })
+      `,
+        }),
       })
     );
     const res = await request(app).get("/assert.js");
@@ -1513,8 +1513,8 @@ describe("named exports", () => {
         module.exports = EventEmitter; // Backwards-compat with node 0.10.x
 
         EventEmitter.EventEmitter = EventEmitter;
-      `
-        })
+      `,
+        }),
       })
     );
     const res = await request(app).get("/events.js");
@@ -1546,8 +1546,8 @@ describe("named exports", () => {
         var foo = exports;
         var bar = foo;
         bar.ok = ok;
-      `
-        })
+      `,
+        }),
       })
     );
     const res = await request(app).get("/index.js");
@@ -1576,13 +1576,13 @@ describe("Node globals", () => {
             path: "/index.js",
             content: `
           var getLength = Buffer.byteLength.bind(Buffer);
-        `
+        `,
           },
           {
             path: "/node_modules/buffer/index.js",
-            content: "module.exports = 'buffer';"
+            content: "module.exports = 'buffer';",
           }
-        )
+        ),
       })
     );
     const res = await request(app).get("/index.js");
@@ -1601,8 +1601,8 @@ describe("Node globals", () => {
           path: "/index.js",
           content: `
           global.foo = bar;
-        `
-        })
+        `,
+        }),
       })
     );
     const res = await request(app).get("/index.js");

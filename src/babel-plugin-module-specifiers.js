@@ -181,6 +181,6 @@ module.exports = () => ({
   visitor: {
     ImportDeclaration,
     ExportAllDeclaration: ImportDeclaration,
-    ExportNamedDeclaration: ImportDeclaration
-  }
+    ExportNamedDeclaration: ImportDeclaration,
+  },
 });

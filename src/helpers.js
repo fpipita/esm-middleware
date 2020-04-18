@@ -92,9 +92,9 @@ function isExportsBinding(path) {
  */
 function hoist(path, ...nodes) {
   const program = /** @type {babel.NodePath<babel.types.Program>} */ (path.find(
-    n => n.isProgram()
+    (n) => n.isProgram()
   ));
-  const body = program.get("body").filter(n => n.isImportDeclaration());
+  const body = program.get("body").filter((n) => n.isImportDeclaration());
   if (body.length > 0) {
     body[body.length - 1].insertAfter(nodes);
   } else {
@@ -106,5 +106,5 @@ module.exports = {
   isExportsBinding,
   hoist,
   SUPPORTED_MODULE_EXTENSIONS,
-  JS_FILE_PATTERN
+  JS_FILE_PATTERN,
 };

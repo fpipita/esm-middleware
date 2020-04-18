@@ -76,7 +76,7 @@ module.exports = () => ({
          * !function(t){**t(exports)**}(function(e){e.bar='foo'})
          */
         const factory = b2.referencePaths.find(
-          ref =>
+          (ref) =>
             ref.parentPath.isCallExpression() &&
             ref.parentPath.get("arguments")[0].isIdentifier({ name: "exports" })
         );
@@ -95,13 +95,13 @@ module.exports = () => ({
               t.variableDeclarator(
                 p2.node,
                 t.memberExpression(t.identifier("exports"), p2.node)
-              )
+              ),
             ]),
             [t.exportSpecifier(p2.node, p2.node)]
           );
           program.pushContainer("body", node);
         }
-      }
-    }
-  }
+      },
+    },
+  },
 });

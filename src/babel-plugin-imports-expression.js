@@ -21,7 +21,7 @@ module.exports = () => ({
       if (!p1.isStringLiteral()) {
         return;
       }
-      if (!path.findParent(parent => parent.isExpression())) {
+      if (!path.findParent((parent) => parent.isExpression())) {
         return;
       }
       const id = path.scope
@@ -30,6 +30,6 @@ module.exports = () => ({
       const node = t.importDeclaration([t.importDefaultSpecifier(id)], p1.node);
       hoist(path, node);
       path.replaceWith(id);
-    }
-  }
+    },
+  },
 });
