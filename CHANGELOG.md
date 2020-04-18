@@ -1,3 +1,5 @@
+## [1.6.3](https://github.com/fpipita/esm-middleware/compare/v1.6.2...v1.6.3) (2020-04-18)
+
 ## [1.6.2](https://github.com/fpipita/esm-middleware/compare/v1.6.1...v1.6.2) (2020-03-18)
 
 ## [1.6.1](https://github.com/fpipita/esm-middleware/compare/v1.6.0...v1.6.1) (2020-03-02)
