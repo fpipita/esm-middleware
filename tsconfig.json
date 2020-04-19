@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "allowJs": true,
+    "allowSyntheticDefaultImports": true,
+    "checkJs": true,
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "outDir": "./types",
+    "strict": true,
+    "strictNullChecks": true,
+    "target": "ESNext"
+  },
+  "typeAcquisition": {
+    "enable": true
+  },
+  "include": ["src"]
+}

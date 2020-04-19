@@ -2,7 +2,8 @@
   "name": "@fpipita/esm-middleware",
   "version": "1.6.3",
   "description": "Serve ES modules from your node_modules folder.",
-  "main": "index.js",
+  "main": "./src/esm-middleware.js",
+  "types": "./types/esm-middleware.d.ts",
   "repository": {
     "type": "git",
     "url": "https://github.com/fpipita/esm-middleware.git"
@@ -32,7 +33,6 @@
     "@babel/types": "^7.9.5"
   },
   "devDependencies": {
-    "@types/jest": "^25.2.1",
     "commitizen": "^4.0.4",
     "conventional-changelog-cli": "^2.0.25",
     "cz-conventional-changelog": "^3.1.0",
@@ -44,7 +44,8 @@
     "jest": "^25.3.0",
     "lint-staged": "^10.1.5",
     "prettier": "^2.0.4",
-    "supertest": "^4.0.2"
+    "supertest": "^4.0.2",
+    "typescript": "^3.8.3"
   },
   "scripts": {
     "test": "jest",
